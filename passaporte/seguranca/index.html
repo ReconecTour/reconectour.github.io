@@ -372,18 +372,103 @@ button{
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/*
-  Esta primeira versão fecha o visual e a estrutura da página.
-  A gravação no Supabase será ligada depois que os nomes exatos
-  das colunas de contatos_emergencia forem aplicados.
-*/
-document.getElementById("security-form").addEventListener("submit", function(e){
-  e.preventDefault();
+const RECONEC_SUPABASE_URL = 'https://soziosuowvgrtmmshwpl.supabase.co';
+const RECONEC_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xPIQdeLUmGd7hdG3QZG9Sw_BcH6RDWv';
+if (window.supabase) {
+  window.reconecSupabase = window.supabase.createClient(RECONEC_SUPABASE_URL, RECONEC_SUPABASE_PUBLISHABLE_KEY);
+}
+
+(function(){
+  const form = document.getElementById("security-form");
   const message = document.getElementById("message");
-  message.style.display = "block";
-  message.textContent = "Informações preenchidas. A gravação conjunta no Supabase será ativada na etapa de integração.";
-});
+  const button = form.querySelector('button[type="submit"]');
+  const telefone = document.getElementById("telefone");
+
+  telefone.addEventListener("input", function(){
+    let v = this.value.replace(/\D/g, "").slice(0, 11);
+    if (v.length > 6) {
+      this.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+    } else if (v.length > 2) {
+      this.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
+    } else if (v.length > 0) {
+      this.value = `(${v}`;
+    } else {
+      this.value = "";
+    }
+  });
+
+  form.addEventListener("submit", async function(e){
+    e.preventDefault();
+    message.style.display = "block";
+    message.className = "message";
+    message.textContent = "";
+
+    const participanteId = sessionStorage.getItem("reconec_participante_id");
+
+    if (!participanteId) {
+      message.textContent = "Não encontramos o cadastro do participante. Volte ao início do Passaporte e faça o cadastro novamente.";
+      return;
+    }
+
+    if (!window.reconecSupabase) {
+      message.textContent = "A conexão com o sistema de cadastro não está disponível.";
+      return;
+    }
+
+    const contato = {
+      participante_id: participanteId,
+      nome: document.getElementById("nome").value.trim(),
+      telefone: document.getElementById("telefone").value.trim(),
+      parentesco: document.getElementById("parentesco").value.trim()
+    };
+
+    const seguranca = {
+      participante_id: participanteId,
+      alergias: document.getElementById("alergias").value.trim() || null,
+      condicoes_medicas: document.getElementById("condicoes_medicas").value.trim() || null,
+      medicamentos: document.getElementById("medicamentos").value.trim() || null,
+      restricoes_atividades: document.getElementById("restricoes_atividades").value.trim() || null,
+      observacoes: document.getElementById("observacoes").value.trim() || null
+    };
+
+    button.disabled = true;
+    button.textContent = "SALVANDO...";
+
+    try {
+      const { error: contatoError } = await window.reconecSupabase
+        .from("contatos_emergencia")
+        .insert([contato]);
+
+      if (contatoError) throw contatoError;
+
+      const { error: segurancaError } = await window.reconecSupabase
+        .from("informacoes_seguranca")
+        .insert([seguranca]);
+
+      if (segurancaError) throw segurancaError;
+
+      sessionStorage.removeItem("reconec_participante_id");
+      sessionStorage.removeItem("reconec_contato_emergencia");
+      sessionStorage.removeItem("reconec_seguranca");
+
+      form.innerHTML = `
+        <div style="text-align:center; padding:28px 8px;">
+          <h2 style="margin-bottom:14px;">Passaporte finalizado!</h2>
+          <p style="line-height:1.7;">Obrigado por concluir seu cadastro na Reconec.tour.</p>
+          <p style="line-height:1.7;">Suas informações foram registradas com sucesso.</p>
+          <p style="line-height:1.7;">Agora é só se preparar para viver novas experiências com a gente.</p>
+        </div>
+      `;
+    } catch (error) {
+      console.error("Erro ao finalizar o Passaporte Reconec.tour:", error);
+      message.textContent = "Não foi possível salvar todas as informações. Verifique sua conexão e tente novamente.";
+      button.disabled = false;
+      button.textContent = "SALVAR E FINALIZAR MEU PASSAPORTE";
+    }
+  });
+})();
 </script>
 </body>
 </html>
