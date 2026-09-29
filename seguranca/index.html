@@ -406,12 +406,13 @@ if (window.supabase) {
 
     // Primeiro tenta recuperar o ID pela URL. Se não existir, usa o sessionStorage.
     const urlId = new URLSearchParams(window.location.search).get('id');
-    const participanteRaw = urlId || sessionStorage.getItem('reconec_participante_id');
+    const participanteRaw = urlId || sessionStorage.getItem('reconec_participante_id') || localStorage.getItem('reconec_participante_id');
     const participanteId = Number(participanteRaw);
 
     // Mantém o ID disponível durante toda a etapa de segurança.
     if(Number.isInteger(participanteId) && participanteId > 0){
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
+  localStorage.setItem('reconec_participante_id', String(participanteId));
     }
 
     if(!window.reconecSupabase){
@@ -461,6 +462,7 @@ if (window.supabase) {
       if(segurancaResult.error) throw segurancaResult.error;
 
       sessionStorage.removeItem('reconec_participante_id');
+      localStorage.removeItem('reconec_participante_id');
       form.innerHTML = `
         <div style="text-align:center;padding:30px 10px 20px;">
           <h2 style="margin-bottom:18px;">PASSAPORTE CONCLUÍDO</h2>
