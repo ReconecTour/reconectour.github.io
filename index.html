@@ -1738,6 +1738,39 @@ section.site-section:first-child {
   }
 }
   </style>
+
+<style id="passaporte-highlight-style">
+.quick-access-secondary .passaporte-highlight {
+  grid-column: 1 / -1;
+  width: calc((100% - .75rem) / 2);
+  justify-self: center;
+  min-height: 58px;
+  padding: 0 18px;
+  border: 1px solid #d9ad45;
+  border-radius: 6px;
+  background: #d9ad45;
+  color: #04140e;
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px rgba(217,173,69,.12), 0 8px 22px rgba(217,173,69,.10);
+}
+.quick-access-secondary .passaporte-highlight:hover {
+  background: #e4bb59;
+  border-color: #e4bb59;
+  color: #04140e;
+}
+@media (max-width:520px){
+  .quick-access-secondary .passaporte-highlight {
+    width: 100%;
+    min-height: 56px;
+    padding: 0 16px;
+    font-size: .7rem;
+  }
+}
+</style>
+
 </head>
 <body>
 <header class="nav">
@@ -1778,6 +1811,9 @@ section.site-section:first-child {
 </h2>
 </div>
 <nav aria-label="Acesso rápido ao conteúdo" class="quick-access-grid">
+<a class="quick-access-btn" href="passaporte/">
+       Passaporte Reconec.tour
+      </a>
 <a class="quick-access-btn" href="#projeto">
        O projeto
       </a>
@@ -1803,6 +1839,9 @@ section.site-section:first-child {
       </a>
 <a href="politica-cancelamento/">
        Política de cancelamento
+      </a>
+<a class="quick-access-btn passaporte-highlight" href="passaporte/">
+       Passaporte Reconec.tour
       </a>
 </div>
 <div class="quick-access-signature">
