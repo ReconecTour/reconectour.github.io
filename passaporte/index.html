@@ -547,9 +547,9 @@ if (window.supabase) {
     try{
       const {data: participanteId, error}=await window.reconecSupabase
         .rpc('criar_participante', {
-          p_nome_completo: data.nome_completo,
+          p_nome: data.nome_completo,
           p_data_nascimento: data.data_nascimento,
-          p_telefone: data.telefone,
+          p_whatsapp: data.telefone,
           p_email: data.email,
           p_bairro: data.bairro,
           p_cidade: data.cidade,
