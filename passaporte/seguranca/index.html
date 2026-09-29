@@ -381,91 +381,94 @@ if (window.supabase) {
 }
 
 (function(){
-  const form = document.getElementById("security-form");
-  const message = document.getElementById("message");
-  const button = form.querySelector('button[type="submit"]');
-  const telefone = document.getElementById("telefone");
+  const form = document.getElementById('security-form');
+  const message = document.getElementById('message');
+  if(!form || !message) return;
 
-  telefone.addEventListener("input", function(){
-    let v = this.value.replace(/\D/g, "").slice(0, 11);
-    if (v.length > 6) {
-      this.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-    } else if (v.length > 2) {
-      this.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
-    } else if (v.length > 0) {
-      this.value = `(${v}`;
-    } else {
-      this.value = "";
+  const telefone = document.getElementById('telefone');
+  telefone.addEventListener('input', function(){
+    let v = telefone.value.replace(/\D/g,'').slice(0,11);
+    if(v.length > 10){
+      v = v.replace(/(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+    }else if(v.length > 6){
+      v = v.replace(/(\d{2})(\d{4,5})(\d{0,4}).*/, '($1) $2-$3');
+    }else if(v.length > 2){
+      v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
     }
+    telefone.value = v;
   });
 
-  form.addEventListener("submit", async function(e){
+  form.addEventListener('submit', async function(e){
     e.preventDefault();
-    message.style.display = "block";
-    message.className = "message";
-    message.textContent = "";
+    message.style.display = 'block';
+    message.className = 'message';
+    message.textContent = 'Salvando suas informações...';
 
-    const participanteId = sessionStorage.getItem("reconec_participante_id");
+    const participanteRaw = sessionStorage.getItem('reconec_participante_id');
+    const participanteId = Number(participanteRaw);
 
-    if (!participanteId) {
-      message.textContent = "Não encontramos o cadastro do participante. Volte ao início do Passaporte e faça o cadastro novamente.";
+    if(!window.reconecSupabase){
+      message.classList.add('error');
+      message.textContent = 'A conexão com o sistema de cadastro não está disponível.';
       return;
     }
 
-    if (!window.reconecSupabase) {
-      message.textContent = "A conexão com o sistema de cadastro não está disponível.";
+    if(!participanteRaw || !Number.isInteger(participanteId) || participanteId <= 0){
+      console.error('ID do participante inválido:', participanteRaw);
+      message.classList.add('error');
+      message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente.';
       return;
     }
 
     const contato = {
       participante_id: participanteId,
-      nome: document.getElementById("nome").value.trim(),
-      telefone: document.getElementById("telefone").value.trim(),
-      parentesco: document.getElementById("parentesco").value.trim()
+      nome: document.getElementById('nome').value.trim(),
+      telefone: document.getElementById('telefone').value.trim(),
+      parentesco: document.getElementById('parentesco').value.trim(),
+      observação: null
     };
 
     const seguranca = {
       participante_id: participanteId,
-      alergias: document.getElementById("alergias").value.trim() || null,
-      condicoes_medicas: document.getElementById("condicoes_medicas").value.trim() || null,
-      medicamentos: document.getElementById("medicamentos").value.trim() || null,
-      restricoes_atividades: document.getElementById("restricoes_atividades").value.trim() || null,
-      observacoes: document.getElementById("observacoes").value.trim() || null
+      alergias: document.getElementById('alergias').value.trim() || null,
+      condicoes_medicas: document.getElementById('condicoes_medicas').value.trim() || null,
+      medicamentos: document.getElementById('medicamentos').value.trim() || null,
+      restricoes_atividades: document.getElementById('restricoes_atividades').value.trim() || null,
+      observacoes: document.getElementById('observacoes').value.trim() || null
     };
 
-    button.disabled = true;
-    button.textContent = "SALVANDO...";
+    const button = form.querySelector('button[type="submit"]');
+    if(button) button.disabled = true;
 
-    try {
-      const { error: contatoError } = await window.reconecSupabase
-        .from("contatos_emergencia")
+    try{
+      const contatoResult = await window.reconecSupabase
+        .from('contatos_emergencia')
         .insert([contato]);
 
-      if (contatoError) throw contatoError;
+      if(contatoResult.error) throw contatoResult.error;
 
-      const { error: segurancaError } = await window.reconecSupabase
-        .from("informacoes_seguranca")
+      const segurancaResult = await window.reconecSupabase
+        .from('informacoes_seguranca')
         .insert([seguranca]);
 
-      if (segurancaError) throw segurancaError;
+      if(segurancaResult.error) throw segurancaResult.error;
 
-      sessionStorage.removeItem("reconec_participante_id");
-      sessionStorage.removeItem("reconec_contato_emergencia");
-      sessionStorage.removeItem("reconec_seguranca");
-
+      sessionStorage.removeItem('reconec_participante_id');
       form.innerHTML = `
-        <div style="text-align:center; padding:28px 8px;">
-          <h2 style="margin-bottom:14px;">Passaporte finalizado!</h2>
-          <p style="line-height:1.7;">Obrigado por concluir seu cadastro na Reconec.tour.</p>
+        <div style="text-align:center;padding:30px 10px 20px;">
+          <h2 style="margin-bottom:18px;">PASSAPORTE CONCLUÍDO</h2>
+          <p style="line-height:1.7;">Obrigado por concluir seu Passaporte Reconec.tour.</p>
           <p style="line-height:1.7;">Suas informações foram registradas com sucesso.</p>
-          <p style="line-height:1.7;">Agora é só se preparar para viver novas experiências com a gente.</p>
-        </div>
-      `;
-    } catch (error) {
-      console.error("Erro ao finalizar o Passaporte Reconec.tour:", error);
-      message.textContent = "Não foi possível salvar todas as informações. Verifique sua conexão e tente novamente.";
-      button.disabled = false;
-      button.textContent = "SALVAR E FINALIZAR MEU PASSAPORTE";
+          <p style="line-height:1.7;">Agora é só preparar a mochila e seguir o caminho.</p>
+        </div>`;
+    }catch(error){
+      console.error('Erro ao salvar o Passaporte:', error);
+      const codigo = error && error.code ? ` [${error.code}]` : '';
+      const detalhe = error && error.message ? error.message : 'Erro desconhecido.';
+      message.classList.add('error');
+      message.textContent = 'Não foi possível salvar as informações. ' + detalhe + codigo;
+    }finally{
+      if(button) button.disabled = false;
     }
   });
 })();
