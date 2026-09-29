@@ -603,7 +603,8 @@ if (window.supabase) {
       message.classList.add('success');
 
       setTimeout(function(){
-        window.location.href='./seguranca/';
+        // Leva o ID também na URL como garantia, caso o navegador não preserve o sessionStorage.
+        window.location.href='./seguranca/?id=' + encodeURIComponent(String(participanteId));
       }, 500);
     }catch(error){
       console.error('Erro no cadastro do Passaporte:',error);
