@@ -581,20 +581,24 @@ if (window.supabase) {
     button.textContent='Cadastrando...';
 
     try{
-      // Grava diretamente na tabela participantes e recupera o qr_id
-      // que será usado nas próximas etapas do Passaporte.
-      const {data: participante, error}=await window.reconecSupabase
-        .from('participantes')
-        .insert([data])
-        .select('qr_id')
-        .single();
+      // Usa a função segura do Supabase para criar o participante e devolver o qr_id.
+      const {data: participanteId, error}=await window.reconecSupabase
+        .rpc('criar_participante', {
+          p_nome_completo: data.nome_completo,
+          p_data_nascimento: data.data_nascimento,
+          p_telefone: data.telefone,
+          p_email: data.email,
+          p_bairro: data.bairro,
+          p_cidade: data.cidade,
+          p_transporte: data.transporte
+        });
 
       if(error) throw error;
-      if(!participante || participante.qr_id === null || participante.qr_id === undefined){
+      if(participanteId === null || participanteId === undefined || participanteId === ''){
         throw new Error('ID do participante não retornado.');
       }
 
-      sessionStorage.setItem('reconec_participante_id', String(participante.qr_id));
+      sessionStorage.setItem('reconec_participante_id', String(participanteId));
       message.textContent='Cadastro realizado com sucesso. Agora vamos cadastrar o contato de emergência.';
       message.classList.add('success');
 
