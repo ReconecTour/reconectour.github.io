@@ -603,7 +603,9 @@ if (window.supabase) {
       }, 500);
     }catch(error){
       console.error('Erro no cadastro do Passaporte:',error);
-      message.textContent='Não foi possível concluir o cadastro agora. Verifique os dados e tente novamente.';
+      const codigo = error && error.code ? ` [${error.code}]` : '';
+      const detalhe = error && error.message ? error.message : '';
+      message.textContent='Não foi possível concluir o cadastro agora.' + (detalhe ? ' ' + detalhe : '') + codigo;
       message.classList.add('error');
     }finally{
       button.disabled=false;
