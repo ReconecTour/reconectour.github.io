@@ -559,12 +559,7 @@ if (window.supabase) {
       if(error) throw error;
       if(!participanteId) throw new Error('ID do participante não retornado.');
 
-      const participante = { id: participanteId };
-
-      if(error) throw error;
-      if(!participante || !participante.id) throw new Error('ID do participante não retornado.');
-
-      sessionStorage.setItem('reconec_participante_id', String(participante.id));
+      sessionStorage.setItem('reconec_participante_id', String(participanteId));
       message.textContent='Cadastro realizado com sucesso. Agora vamos preencher as informações de segurança.';
       message.classList.add('success');
 
