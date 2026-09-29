@@ -438,10 +438,11 @@ body{
 <main id="passaporte-cadastro" aria-label="Passaporte Reconec.tour"><div class="passaporte-box"><div class="passaporte-opening">
 <p class="intro">Cadastre-se para fazer parte das experiências da Reconec.tour e seguir conectando trilha, natureza, cultura e saúde.</p>
 <blockquote class="passaporte-quote">“Há caminhos que atravessamos. E há caminhos que passam a fazer parte de quem somos.”</blockquote>
+<p class="section-description">Preencha os campos com informações atualizadas. Os campos marcados com * são obrigatórios.</p>
 </div><form class="passaporte-form" id="reconec-passaporte-form">
 <div class="field">
 <label for="nome_completo">Nome completo <span class="passaporte-required">*</span></label>
-<input id="nome_completo" name="nome_completo" type="text" autocomplete="name" required maxlength="150">
+<input id="nome_completo" name="nome_completo" type="text" autocomplete="name" required maxlength="150" placeholder="Nome completo">
 </div>
 <div class="passaporte-grid">
 <div class="field">
@@ -450,21 +451,21 @@ body{
 </div>
 <div class="field">
 <label for="telefone">WhatsApp / telefone <span class="passaporte-required">*</span></label>
-<input id="telefone" name="telefone" type="tel" autocomplete="tel" required maxlength="30">
+<input id="telefone" name="telefone" type="tel" autocomplete="tel" required maxlength="15" inputmode="numeric" placeholder="(00) 00000-0000">
 </div>
 </div>
 <div class="field">
 <label for="email">E-mail</label>
-<input id="email" name="email" type="email" autocomplete="email" maxlength="150">
+<input id="email" name="email" type="email" autocomplete="email" maxlength="150" placeholder="seuemail@exemplo.com">
 </div>
 <div class="passaporte-grid">
 <div class="field">
 <label for="bairro">Bairro</label>
-<input id="bairro" name="bairro" type="text" autocomplete="address-level3" maxlength="100">
+<input id="bairro" name="bairro" type="text" autocomplete="address-level3" maxlength="100" placeholder="Ex.: Tijuca">
 </div>
 <div class="field">
 <label for="cidade">Cidade</label>
-<input id="cidade" name="cidade" type="text" autocomplete="address-level2" maxlength="100" value="Rio de Janeiro">
+<input id="cidade" name="cidade" type="text" autocomplete="address-level2" maxlength="100" value="Rio de Janeiro" placeholder="Ex.: Rio de Janeiro">
 </div>
 </div>
 <div class="field">
@@ -514,6 +515,34 @@ if (window.supabase) {
   const today=new Date();
   dateInput.max=today.toISOString().slice(0,10);
 
+  const telefoneInput=document.getElementById('telefone');
+  telefoneInput.addEventListener('input', function(){
+    const digits=this.value.replace(/\\D/g,'').slice(0,11);
+    if(digits.length <= 10){
+      this.value=digits
+        .replace(/^(\\d{0,2})(\\d{0,4})(\\d{0,4}).*$/, function(_,a,b,c){
+          return (a ? '('+a+(a.length===2 ? ') ' : '') : '')
+            + b + (c ? '-'+c : '');
+        });
+    }else{
+      this.value=digits
+        .replace(/^(\\d{0,2})(\\d{0,5})(\\d{0,4}).*$/, function(_,a,b,c){
+          return (a ? '('+a+(a.length===2 ? ') ' : '') : '')
+            + b + (c ? '-'+c : '');
+        });
+    }
+  });
+
+  telefoneInput.addEventListener('blur', function(){
+    const digits=this.value.replace(/\\D/g,'');
+    if(digits.length===11){
+      this.value=digits.replace(/^(\\d{2})(\\d{5})(\\d{4})$/, '($1) $2-$3');
+    }else if(digits.length===10){
+      this.value=digits.replace(/^(\\d{2})(\\d{4})(\\d{4})$/, '($1) $2-$3');
+    }
+  });
+
+
   form.addEventListener('submit', async function(event){
     event.preventDefault();
     message.textContent='';
@@ -541,15 +570,22 @@ if (window.supabase) {
       return;
     }
 
+    const telefoneDigits=data.telefone.replace(/\\D/g,'');
+    if(telefoneDigits.length!==10 && telefoneDigits.length!==11){
+      message.textContent='Informe um telefone válido no formato (00) 00000-0000.';
+      message.classList.add('error');
+      return;
+    }
+
     button.disabled=true;
     button.textContent='Cadastrando...';
 
     try{
       const {data: participanteId, error}=await window.reconecSupabase
         .rpc('criar_participante', {
-          p_nome: data.nome_completo,
+          p_nome_completo: data.nome_completo,
           p_data_nascimento: data.data_nascimento,
-          p_whatsapp: data.telefone,
+          p_telefone: data.telefone,
           p_email: data.email,
           p_bairro: data.bairro,
           p_cidade: data.cidade,
