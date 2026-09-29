@@ -1740,37 +1740,65 @@ section.site-section:first-child {
   </style>
 
 <style id="passaporte-highlight-style">
-.quick-access-secondary .passaporte-highlight {
-  grid-column: 1 / -1;
-  width: calc((100% - .75rem) / 2);
-  justify-self: center;
-  min-height: 58px;
-  padding: 0 18px;
-  border: 1px solid #d9ad45;
-  border-radius: 6px;
-  background: #d9ad45;
-  color: #04140e;
-  font-size: .76rem;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+.quick-access-btn.passaporte-highlight {
+  background: #d9ad45 !important;
+  border-color: #d9ad45 !important;
+  color: #04140e !important;
+  font-weight: 800 !important;
   box-shadow: 0 0 0 1px rgba(217,173,69,.12), 0 8px 22px rgba(217,173,69,.10);
 }
-.quick-access-secondary .passaporte-highlight:hover {
-  background: #e4bb59;
-  border-color: #e4bb59;
-  color: #04140e;
+.quick-access-btn.passaporte-highlight:hover {
+  background: #e4bb59 !important;
+  border-color: #e4bb59 !important;
+  color: #04140e !important;
 }
-@media (max-width:520px){
+
+@media (max-width:699px){
   .quick-access-secondary .passaporte-highlight {
     width: 100%;
     min-height: 56px;
-    padding: 0 16px;
-    font-size: .7rem;
+    padding: 0 17px;
+    font-size: .70rem;
   }
 }
 </style>
 
+
+<style id="passaporte-mesmo-padrao-botoes">
+.quick-access-secondary .passaporte-highlight{
+  grid-column:1 / -1 !important;
+  width:100% !important;
+  min-height:58px !important;
+  height:58px !important;
+  padding:0 20px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  border:1px solid #d9ad45 !important;
+  border-radius:10px !important;
+  background:#d9ad45 !important;
+  color:#04140e !important;
+  font-size:.75rem !important;
+  font-weight:800 !important;
+  letter-spacing:.10em !important;
+  text-transform:uppercase !important;
+  box-shadow:0 0 0 1px rgba(217,173,69,.12),0 8px 22px rgba(217,173,69,.10) !important;
+}
+.quick-access-secondary .passaporte-highlight::after{
+  content:"↗" !important;
+  color:#04140e !important;
+  font-size:.9rem !important;
+  margin-left:16px !important;
+}
+@media (max-width:699px){
+  .quick-access-secondary .passaporte-highlight{
+    min-height:56px !important;
+    height:56px !important;
+    padding:0 17px !important;
+    font-size:.70rem !important;
+  }
+}
+</style>
 </head>
 <body>
 <header class="nav">
@@ -1811,9 +1839,6 @@ section.site-section:first-child {
 </h2>
 </div>
 <nav aria-label="Acesso rápido ao conteúdo" class="quick-access-grid">
-<a class="quick-access-btn" href="passaporte/">
-       Passaporte Reconec.tour
-      </a>
 <a class="quick-access-btn" href="#projeto">
        O projeto
       </a>
