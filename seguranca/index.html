@@ -404,15 +404,17 @@ if (window.supabase) {
     message.className = 'message';
     message.textContent = 'Salvando suas informações...';
 
-    // Primeiro tenta recuperar o ID pela URL. Se não existir, usa o sessionStorage.
+    // Recupera o participante pela URL e, como fallback, pelos storages do navegador.
+    // Isso evita perder a sequência do cadastro ao abrir a página /seguranca/.
     const urlId = new URLSearchParams(window.location.search).get('id');
-    const participanteRaw = urlId || sessionStorage.getItem('reconec_participante_id') || localStorage.getItem('reconec_participante_id');
+    const sessionId = sessionStorage.getItem('reconec_participante_id');
+    const localId = localStorage.getItem('reconec_participante_id');
+    const participanteRaw = urlId || sessionId || localId;
     const participanteId = Number(participanteRaw);
 
-    // Mantém o ID disponível durante toda a etapa de segurança.
     if(Number.isInteger(participanteId) && participanteId > 0){
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
-  localStorage.setItem('reconec_participante_id', String(participanteId));
+      localStorage.setItem('reconec_participante_id', String(participanteId));
     }
 
     if(!window.reconecSupabase){
@@ -424,7 +426,7 @@ if (window.supabase) {
     if(!participanteRaw || !Number.isInteger(participanteId) || participanteId <= 0){
       console.error('ID do participante inválido:', participanteRaw);
       message.classList.add('error');
-      message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente para preservar a sequência do cadastro.';
+      message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente.';
       return;
     }
 
