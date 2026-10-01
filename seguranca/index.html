@@ -410,9 +410,10 @@ if (window.supabase) {
     const sessionId = sessionStorage.getItem('reconec_participante_id');
     const localId = localStorage.getItem('reconec_participante_id');
     const participanteRaw = urlId || sessionId || localId;
-    const participanteId = Number(participanteRaw);
+    const participanteId = String(participanteRaw || '').trim();
+    const uuidValido = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(participanteId);
 
-    if(Number.isInteger(participanteId) && participanteId > 0){
+    if(uuidValido){
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
       localStorage.setItem('reconec_participante_id', String(participanteId));
     }
@@ -423,7 +424,7 @@ if (window.supabase) {
       return;
     }
 
-    if(!participanteRaw || !Number.isInteger(participanteId) || participanteId <= 0){
+    if(!uuidValido){
       console.error('ID do participante inválido:', participanteRaw);
       message.classList.add('error');
       message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente.';
