@@ -430,12 +430,21 @@ if (window.supabase) {
       return;
     }
 
+    const nomeContato = document.getElementById('nome').value.trim();
+    const telefoneContato = document.getElementById('telefone').value.trim();
+    const parentescoContato = document.getElementById('parentesco').value.trim();
+
+    if(!nomeContato || !telefoneContato || !parentescoContato){
+      message.classList.add('error');
+      message.textContent = 'Preencha nome, telefone e parentesco do contato de emergência.';
+      return;
+    }
+
     const contato = {
       participante_id: participanteId,
-      nome: document.getElementById('nome').value.trim(),
-      telefone: document.getElementById('telefone').value.trim(),
-      parentesco: document.getElementById('parentesco').value.trim(),
-      observação: null
+      nome: nomeContato,
+      telefone: telefoneContato,
+      parentesco: parentescoContato
     };
 
     const seguranca = {
@@ -477,7 +486,7 @@ if (window.supabase) {
       const codigo = error && error.code ? ` [${error.code}]` : '';
       const detalhe = error && error.message ? error.message : 'Erro desconhecido.';
       message.classList.add('error');
-      message.textContent = 'Não foi possível salvar as informações. ' + detalhe + codigo;
+      message.textContent = 'Não foi possível concluir o cadastro. ' + detalhe + codigo;
     }finally{
       if(button) button.disabled = false;
     }
