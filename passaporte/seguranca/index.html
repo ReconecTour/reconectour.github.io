@@ -404,15 +404,18 @@ if (window.supabase) {
     message.className = 'message';
     message.textContent = 'Salvando suas informações...';
 
-    // Primeiro tenta recuperar o ID pela URL. Se não existir, usa o sessionStorage.
+    // Recupera o participante pela URL e, como fallback, pelos storages do navegador.
+    // Isso evita perder a sequência do cadastro ao abrir a página /seguranca/.
     const urlId = new URLSearchParams(window.location.search).get('id');
-    const participanteRaw = urlId || sessionStorage.getItem('reconec_participante_id') || localStorage.getItem('reconec_participante_id');
-    const participanteId = Number(participanteRaw);
+    const sessionId = sessionStorage.getItem('reconec_participante_id');
+    const localId = localStorage.getItem('reconec_participante_id');
+    const participanteRaw = urlId || sessionId || localId;
+    const participanteId = String(participanteRaw || '').trim();
+    const uuidValido = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(participanteId);
 
-    // Mantém o ID disponível durante toda a etapa de segurança.
-    if(Number.isInteger(participanteId) && participanteId > 0){
+    if(uuidValido){
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
-  localStorage.setItem('reconec_participante_id', String(participanteId));
+      localStorage.setItem('reconec_participante_id', String(participanteId));
     }
 
     if(!window.reconecSupabase){
@@ -421,19 +424,28 @@ if (window.supabase) {
       return;
     }
 
-    if(!participanteRaw || !Number.isInteger(participanteId) || participanteId <= 0){
+    if(!uuidValido){
       console.error('ID do participante inválido:', participanteRaw);
       message.classList.add('error');
-      message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente para preservar a sequência do cadastro.';
+      message.textContent = 'Não foi possível identificar o participante deste cadastro. Volte ao Passaporte e inicie novamente.';
+      return;
+    }
+
+    const nomeContato = document.getElementById('nome').value.trim();
+    const telefoneContato = document.getElementById('telefone').value.trim();
+    const parentescoContato = document.getElementById('parentesco').value.trim();
+
+    if(!nomeContato || !telefoneContato || !parentescoContato){
+      message.classList.add('error');
+      message.textContent = 'Preencha nome, telefone e parentesco do contato de emergência.';
       return;
     }
 
     const contato = {
       participante_id: participanteId,
-      nome: document.getElementById('nome').value.trim(),
-      telefone: document.getElementById('telefone').value.trim(),
-      parentesco: document.getElementById('parentesco').value.trim(),
-      observação: null
+      nome: nomeContato,
+      telefone: telefoneContato,
+      parentesco: parentescoContato
     };
 
     const seguranca = {
@@ -475,7 +487,7 @@ if (window.supabase) {
       const codigo = error && error.code ? ` [${error.code}]` : '';
       const detalhe = error && error.message ? error.message : 'Erro desconhecido.';
       message.classList.add('error');
-      message.textContent = 'Não foi possível salvar as informações. ' + detalhe + codigo;
+      message.textContent = 'Não foi possível concluir o cadastro. ' + detalhe + codigo;
     }finally{
       if(button) button.disabled = false;
     }
