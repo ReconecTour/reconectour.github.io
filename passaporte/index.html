@@ -599,13 +599,11 @@ if (window.supabase) {
       }
 
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
-      localStorage.setItem('reconec_participante_id', String(participanteId));
       message.textContent='Cadastro realizado com sucesso. Agora vamos cadastrar o contato de emergência.';
       message.classList.add('success');
 
       setTimeout(function(){
-        // Leva o ID também na URL como garantia, caso o navegador não preserve o sessionStorage.
-        window.location.href='./seguranca/';
+        window.location.href='./seguranca/?id=' + encodeURIComponent(String(participanteId));
       }, 500);
     }catch(error){
       console.error('Erro no cadastro do Passaporte:',error);
