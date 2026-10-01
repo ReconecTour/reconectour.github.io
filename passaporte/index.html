@@ -517,16 +517,16 @@ if (window.supabase) {
 
   const telefoneInput=document.getElementById('telefone');
   telefoneInput.addEventListener('input', function(){
-    const digits=this.value.replace(/\\D/g,'').slice(0,11);
+    const digits=this.value.replace(/\D/g,'').slice(0,11);
     if(digits.length <= 10){
       this.value=digits
-        .replace(/^(\\d{0,2})(\\d{0,4})(\\d{0,4}).*$/, function(_,a,b,c){
+        .replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*$/, function(_,a,b,c){
           return (a ? '('+a+(a.length===2 ? ') ' : '') : '')
             + b + (c ? '-'+c : '');
         });
     }else{
       this.value=digits
-        .replace(/^(\\d{0,2})(\\d{0,5})(\\d{0,4}).*$/, function(_,a,b,c){
+        .replace(/^(\d{0,2})(\d{0,5})(\d{0,4}).*$/, function(_,a,b,c){
           return (a ? '('+a+(a.length===2 ? ') ' : '') : '')
             + b + (c ? '-'+c : '');
         });
@@ -534,11 +534,11 @@ if (window.supabase) {
   });
 
   telefoneInput.addEventListener('blur', function(){
-    const digits=this.value.replace(/\\D/g,'');
+    const digits=this.value.replace(/\D/g,'');
     if(digits.length===11){
-      this.value=digits.replace(/^(\\d{2})(\\d{5})(\\d{4})$/, '($1) $2-$3');
+      this.value=digits.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
     }else if(digits.length===10){
-      this.value=digits.replace(/^(\\d{2})(\\d{4})(\\d{4})$/, '($1) $2-$3');
+      this.value=digits.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
     }
   });
 
@@ -570,7 +570,7 @@ if (window.supabase) {
       return;
     }
 
-    const telefoneDigits=data.telefone.replace(/\\D/g,'');
+    const telefoneDigits=data.telefone.replace(/\D/g,'');
     if(telefoneDigits.length!==10 && telefoneDigits.length!==11){
       message.textContent='Informe um telefone válido no formato (00) 00000-0000.';
       message.classList.add('error');
@@ -599,10 +599,12 @@ if (window.supabase) {
       }
 
       sessionStorage.setItem('reconec_participante_id', String(participanteId));
+      localStorage.setItem('reconec_participante_id', String(participanteId));
       message.textContent='Cadastro realizado com sucesso. Agora vamos cadastrar o contato de emergência.';
       message.classList.add('success');
 
       setTimeout(function(){
+        // Leva o ID também na URL como garantia, caso o navegador não preserve o sessionStorage.
         window.location.href='./seguranca/?id=' + encodeURIComponent(String(participanteId));
       }, 500);
     }catch(error){
