@@ -475,7 +475,7 @@ if (window.supabase) {
 
       sessionStorage.removeItem('reconec_participante_id');
       localStorage.removeItem('reconec_participante_id');
-      window.location.href = '../conclusao/';
+      window.location.href = '../concluído/';
     }catch(error){
       console.error('Erro ao salvar o Passaporte:', error);
       const codigo = error && error.code ? ` [${error.code}]` : '';
