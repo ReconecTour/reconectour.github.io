@@ -475,13 +475,7 @@ if (window.supabase) {
 
       sessionStorage.removeItem('reconec_participante_id');
       localStorage.removeItem('reconec_participante_id');
-      form.innerHTML = `
-        <div style="text-align:center;padding:30px 10px 20px;">
-          <h2 style="margin-bottom:18px;">PASSAPORTE CONCLUÍDO</h2>
-          <p style="line-height:1.7;">Obrigado por concluir seu Passaporte Reconec.tour.</p>
-          <p style="line-height:1.7;">Suas informações foram registradas com sucesso.</p>
-          <p style="line-height:1.7;">Agora é só preparar a mochila e seguir o caminho.</p>
-        </div>`;
+      window.location.href = '../conclusao/';
     }catch(error){
       console.error('Erro ao salvar o Passaporte:', error);
       const codigo = error && error.code ? ` [${error.code}]` : '';
