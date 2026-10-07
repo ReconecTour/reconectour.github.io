@@ -141,7 +141,19 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
 <div id="benefitList" class="benefit-list"></div>
 </div></section>
-<section id="fidelidade" class="section"><div class="panel"><h2>Fidelidade</h2><div class="empty">Módulo preparado para mostrar o ciclo 1 → 8, conquistas, utilização e histórico.</div></div></section>
+<section id="fidelidade" class="section">
+<div class="panel">
+<h2>Fidelidade</h2>
+<p class="sub">Consulte o ciclo, a posição do participante e os benefícios conquistados.</p>
+<div class="field" style="max-width:520px;margin-top:14px">
+<label>Participante</label>
+<select id="fidelityParticipant" onchange="loadFidelity()"><option value="">Selecione um participante</option></select>
+</div>
+<div id="fidelityBox" style="margin-top:16px">
+<div class="empty">Selecione um participante para visualizar a fidelidade.</div>
+</div>
+</div>
+</section>
 </main></div>
 
 <nav class="mobile-nav">
@@ -183,11 +195,86 @@ let participants=[],benefits=[],demoMode=false,editingBenefitId=null;
 const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],participantes:['Participantes','Cadastros e gestão dos participantes'],trilhas:['Trilhas','Destinos cadastrados na Reconec.tour'],participacoes:['Participações','Histórico de presença nas trilhas'],beneficios:['Benefícios','Regras e benefícios do Passaporte'],fidelidade:['Fidelidade','Ciclos e conquistas dos participantes']};
 
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.section)));
+async function loadFidelityParticipants(){
+if(demoMode){
+const s=document.getElementById('fidelityParticipant');
+s.innerHTML='<option value="demo1">Exemplo de participante</option>';
+return;
+}
+const r=await db.from('participantes').select('id,nome').order('nome');
+if(r.error){console.error(r.error);return}
+const s=document.getElementById('fidelityParticipant');
+s.innerHTML='<option value="">Selecione um participante</option>'+(r.data||[]).map(p=>'<option value="'+p.id+'">'+esc(p.nome)+'</option>').join('');
+}
+
+async function loadFidelity(){
+const id=document.getElementById('fidelityParticipant').value;
+const box=document.getElementById('fidelityBox');
+if(!id){
+box.innerHTML='<div class="empty">Selecione um participante para visualizar a fidelidade.</div>';
+return;
+}
+
+if(demoMode){
+box.innerHTML='<div class="panel" style="margin-top:10px"><h3>Exemplo de participante</h3><p class="sub">Participações históricas: 0 · Posição no ciclo: 0/8</p><div class="empty">A pré-visualização não consulta nem altera o Supabase.</div></div>';
+return;
+}
+
+const pr=await db.from('participacoes').select('id,data_participacao,trilha_id').eq('participante_id',id).order('data_participacao',{ascending:true});
+if(pr.error){box.innerHTML='<div class="empty">'+esc(pr.error.message)+'</div>';return}
+
+const total=(pr.data||[]).length;
+
+const br=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').eq('ativo',true).gt('quantidade_trilhas',0).order('quantidade_trilhas');
+if(br.error){box.innerHTML='<div class="empty">'+esc(br.error.message)+'</div>';return}
+
+const active=br.data||[];
+const cycle=active.length?Math.max(...active.map(b=>Number(b.quantidade_trilhas))):0;
+
+if(!cycle){
+box.innerHTML='<div class="empty">Nenhum benefício ativo está configurado.</div>';
+return;
+}
+
+const pos=total===0?0:((total-1)%cycle)+1;
+
+const cr=await db.from('beneficios_conquistados').select('id,beneficio_id,conquistado_em,utilizado,utilizado_em').eq('participante_id',id).order('conquistado_em',{ascending:false});
+if(cr.error){box.innerHTML='<div class="empty">'+esc(cr.error.message)+'</div>';return}
+
+const cmap=new Map(active.map(b=>[b.id,b]));
+const conquered=cr.data||[];
+
+let steps='';
+for(let i=1;i<=cycle;i++){
+const done=i<=pos;
+const reward=active.some(b=>Number(b.quantidade_trilhas)===i);
+steps+='<div class="step '+(done?'done ':'')+(reward?'reward':'')+'">'+i+'</div>';
+}
+
+const rules=active.map(b=>'<div class="mini-card" style="margin-top:8px"><strong>'+esc(b.nome)+'</strong><p>'+esc(b.descricao||'')+' · na '+Number(b.quantidade_trilhas)+'ª trilha</p></div>').join('');
+
+const history=conquered.length
+?conquered.map(x=>{
+const b=cmap.get(x.beneficio_id);
+return '<div class="mini-card" style="margin-top:8px"><strong>'+esc(b?.nome||'Benefício')+'</strong><p>Conquistado em '+esc((x.conquistado_em||'').slice(0,10))+(x.utilizado?' · utilizado':' · disponível')+(x.utilizado_em?' em '+esc((x.utilizado_em||'').slice(0,10)):'')+'</p></div>';
+}).join('')
+:'<div class="empty">Nenhum benefício conquistado ainda.</div>';
+
+const cols=Math.min(Math.max(cycle,1),8);
+box.innerHTML='<div class="panel" style="margin-top:10px">'+
+'<p class="sub">Participações históricas: <strong>'+total+'</strong> · Posição no ciclo atual: <strong>'+pos+'/'+cycle+'</strong></p>'+
+'<div class="cycle" style="grid-template-columns:repeat('+cols+',1fr)">'+steps+'</div>'+
+'<div class="progress"><i style="width:'+(pos/cycle*100)+'%"></i></div>'+
+'<div style="margin-top:18px"><h3>Regras ativas</h3>'+rules+'</div>'+
+'<div style="margin-top:18px"><h3>Benefícios conquistados</h3>'+history+'</div>'+
+'</div>';
+}
+
 function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(id==='dashboard'&&!demoMode)loadDashboard();if(id==='participantes'&&!demoMode)loadParticipants();if(id==='beneficios')loadBenefits();
+if(id==='dashboard'&&!demoMode)loadDashboard();if(id==='participantes'&&!demoMode)loadParticipants();if(id==='beneficios')loadBenefits();if(id==='fidelidade')loadFidelityParticipants();
 }
 async function entrar(){
 msg.textContent='Entrando...';
@@ -218,10 +305,30 @@ participants=[{id:'demo1',nome:'Exemplo de participante',telefone:'(21) 99999-99
 function openModal(){if(demoMode){alert('A pré-visualização não grava dados. Para cadastrar, entre com a conta administrativa.');return}modal.classList.add('active')}
 function closeModal(){modal.classList.remove('active')}
 async function saveParticipant(){
-const p={nome:pn.value.trim(),data_nascimento:pd.value||null,telefone:pt.value.trim(),email:pe.value.trim(),bairro:pb.value.trim(),cidade:pc.value.trim(),transporte:px.value.trim()};
-if(!p.nome){alert('Informe o nome completo.');return}
-const r=await db.from('participantes').insert(p);if(r.error){alert(r.error.message);return}
-closeModal();['pn','pd','pt','pe','pb','pc','px'].forEach(id=>document.getElementById(id).value='');await loadParticipants();await loadDashboard();
+const p={
+nome_completo:pn.value.trim(),
+data_nascimento:pd.value||null,
+telefone:pt.value.trim(),
+email:pe.value.trim(),
+bairro:pb.value.trim(),
+cidade:pc.value.trim(),
+transporte:px.value.trim()
+};
+if(!p.nome_completo){alert('Informe o nome completo.');return}
+const r=await db.rpc('criar_participante',{
+p_nome_completo:p.nome_completo,
+p_data_nascimento:p.data_nascimento,
+p_telefone:p.telefone,
+p_email:p.email,
+p_bairro:p.bairro,
+p_cidade:p.cidade,
+p_transporte:p.transporte
+});
+if(r.error){alert('Não foi possível cadastrar o participante: '+r.error.message);return}
+closeModal();
+['pn','pd','pt','pe','pb','pc','px'].forEach(id=>document.getElementById(id).value='');
+await loadParticipants();
+await loadDashboard();
 }
 
 async function loadBenefits(){
