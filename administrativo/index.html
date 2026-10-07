@@ -37,7 +37,7 @@ button,input{font:inherit}button{cursor:pointer}
 .nav b{font:400 12px Georgia;color:var(--gold);margin-right:9px}
 main{margin-left:250px;padding:35px 5vw 90px}
 .top{display:flex;align-items:center;gap:17px;margin-bottom:30px}
-.top-logo{width:72px;height:72px;border-radius: 0;object-fit:contain;border:0;outline:0;box-shadow:none;background:transparent}
+.top-logo{width:72px;height:72px;border-radius:50%;object-fit:contain;border:0;outline:0;box-shadow:none;background:transparent}
 .top h1{font:400 clamp(30px,4vw,46px) Georgia;margin:5px 0}
 .top .sub{color:var(--muted);font-size:13px}
 .section{display:none}.section.active{display:block}
@@ -63,7 +63,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 .sidebar{display:none}main{margin:0;padding:25px 15px 82px}.cards{grid-template-columns:1fr 1fr}.card{padding:15px}.value{font-size:29px}
 .desktop-table{display:none}.mob-card{display:block;border:1px solid var(--line);border-radius:8px;padding:13px;margin:8px 0;background:rgba(23,56,43,.42)}
 .mob-card strong{font:400 17px Georgia}.mob-card small{display:block;color:var(--muted);margin-top:6px}
-.mobile-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:40;bottom:0;left:0;right:0;background:#0b261d;border-top:1px solid var(--line)}
+.mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;z-index:40;bottom:0;left:0;right:0;background:#0b261d;border-top:1px solid var(--line)}
 .mobile-nav button{border:0;background:transparent;color:#9daaa3;padding:9px 3px;font-size:9px}.mobile-nav button.active{color:var(--gold)}
 .mobile-nav span{display:block;font-size:18px;margin-bottom:3px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.top-logo{width:60px;height:60px;border:0;outline:0;box-shadow:none;background:transparent}.top{gap:11px}
 }
@@ -84,9 +84,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <input id="email" type="email" placeholder="E-mail administrativo">
 <input id="password" type="password" placeholder="Senha">
 <button class="btn primary" onclick="entrar()">Entrar no administrativo</button>
-<button class="btn demo" onclick="demo()">Visualizar a interface</button>
 <div id="msg" class="msg"></div>
-<div class="note">A visualização da interface é apenas uma prévia. O acesso real usa a autenticação do Supabase.</div>
 </div>
 </div>
 
@@ -141,26 +139,13 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
 <div id="benefitList" class="benefit-list"></div>
 </div></section>
-<section id="fidelidade" class="section">
-<div class="panel">
-<h2>Fidelidade</h2>
-<p class="sub">Consulte o ciclo, a posição do participante e os benefícios conquistados.</p>
-<div class="field" style="max-width:520px;margin-top:14px">
-<label>Participante</label>
-<select id="fidelityParticipant" onchange="loadFidelity()"><option value="">Selecione um participante</option></select>
-</div>
-<div id="fidelityBox" style="margin-top:16px">
-<div class="empty">Selecione um participante para visualizar a fidelidade.</div>
-</div>
-</div>
-</section>
+<section id="fidelidade" class="section"><div class="panel"><h2>Fidelidade</h2><div class="empty">Módulo preparado para mostrar o ciclo 1 → 8, conquistas, utilização e histórico.</div></div></section>
 </main></div>
 
 <nav class="mobile-nav">
 <button class="active" data-section="dashboard"><span>⌂</span>Início</button>
 <button data-section="participantes"><span>♙</span>Participantes</button>
 <button data-section="trilhas"><span>⌁</span>Trilhas</button>
-<button data-section="beneficios"><span>◆</span>Benefícios</button>
 <button data-section="fidelidade"><span>◇</span>Fidelidade</button>
 </nav>
 
@@ -192,192 +177,47 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 const SUPABASE_URL='https://soziosuowvgrtmmshwpl.supabase.co';
 const SUPABASE_KEY='sb_publishable_xPIQdeLUmGd7hdG3QZG9Sw_BcH6RDWv';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let participants=[],benefits=[],demoMode=false,editingBenefitId=null;
+let participants=[],benefits=[],editingBenefitId=null;
 const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],participantes:['Participantes','Cadastros e gestão dos participantes'],trilhas:['Trilhas','Destinos cadastrados na Reconec.tour'],participacoes:['Participações','Histórico de presença nas trilhas'],beneficios:['Benefícios','Regras e benefícios do Passaporte'],fidelidade:['Fidelidade','Ciclos e conquistas dos participantes']};
 
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.section)));
-async function loadFidelityParticipants(){
-if(demoMode){
-const s=document.getElementById('fidelityParticipant');
-s.innerHTML='<option value="demo1">Exemplo de participante</option>';
-return;
-}
-const r=await db.from('participantes').select('id,nome').order('nome');
-if(r.error){console.error(r.error);return}
-const s=document.getElementById('fidelityParticipant');
-s.innerHTML='<option value="">Selecione um participante</option>'+(r.data||[]).map(p=>'<option value="'+p.id+'">'+esc(p.nome)+'</option>').join('');
-}
-
-async function loadFidelity(){
-const id=document.getElementById('fidelityParticipant').value;
-const box=document.getElementById('fidelityBox');
-if(!id){
-box.innerHTML='<div class="empty">Selecione um participante para visualizar a fidelidade.</div>';
-return;
-}
-
-if(demoMode){
-box.innerHTML='<div class="panel" style="margin-top:10px"><h3>Exemplo de participante</h3><p class="sub">Participações históricas: 0 · Posição no ciclo: 0/8</p><div class="empty">A pré-visualização não consulta nem altera o Supabase.</div></div>';
-return;
-}
-
-const pr=await db.from('participacoes').select('id,data_participacao,trilha_id').eq('participante_id',id).order('data_participacao',{ascending:true});
-if(pr.error){box.innerHTML='<div class="empty">'+esc(pr.error.message)+'</div>';return}
-
-const total=(pr.data||[]).length;
-
-const br=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').eq('ativo',true).gt('quantidade_trilhas',0).order('quantidade_trilhas');
-if(br.error){box.innerHTML='<div class="empty">'+esc(br.error.message)+'</div>';return}
-
-const active=br.data||[];
-const cycle=active.length?Math.max(...active.map(b=>Number(b.quantidade_trilhas))):0;
-
-if(!cycle){
-box.innerHTML='<div class="empty">Nenhum benefício ativo está configurado.</div>';
-return;
-}
-
-const pos=total===0?0:((total-1)%cycle)+1;
-
-const cr=await db.from('beneficios_conquistados').select('id,beneficio_id,conquistado_em,utilizado,utilizado_em').eq('participante_id',id).order('conquistado_em',{ascending:false});
-if(cr.error){box.innerHTML='<div class="empty">'+esc(cr.error.message)+'</div>';return}
-
-const cmap=new Map(active.map(b=>[b.id,b]));
-const conquered=cr.data||[];
-
-let steps='';
-for(let i=1;i<=cycle;i++){
-const done=i<=pos;
-const reward=active.some(b=>Number(b.quantidade_trilhas)===i);
-steps+='<div class="step '+(done?'done ':'')+(reward?'reward':'')+'">'+i+'</div>';
-}
-
-const rules=active.map(b=>'<div class="mini-card" style="margin-top:8px"><strong>'+esc(b.nome)+'</strong><p>'+esc(b.descricao||'')+' · na '+Number(b.quantidade_trilhas)+'ª trilha</p></div>').join('');
-
-const history=conquered.length
-?conquered.map(x=>{
-const b=cmap.get(x.beneficio_id);
-return '<div class="mini-card" style="margin-top:8px"><strong>'+esc(b?.nome||'Benefício')+'</strong><p>Conquistado em '+esc((x.conquistado_em||'').slice(0,10))+(x.utilizado?' · utilizado':' · disponível')+(x.utilizado_em?' em '+esc((x.utilizado_em||'').slice(0,10)):'')+'</p></div>';
-}).join('')
-:'<div class="empty">Nenhum benefício conquistado ainda.</div>';
-
-const cols=Math.min(Math.max(cycle,1),8);
-box.innerHTML='<div class="panel" style="margin-top:10px">'+
-'<p class="sub">Participações históricas: <strong>'+total+'</strong> · Posição no ciclo atual: <strong>'+pos+'/'+cycle+'</strong></p>'+
-'<div class="cycle" style="grid-template-columns:repeat('+cols+',1fr)">'+steps+'</div>'+
-'<div class="progress"><i style="width:'+(pos/cycle*100)+'%"></i></div>'+
-'<div style="margin-top:18px"><h3>Regras ativas</h3>'+rules+'</div>'+
-'<div style="margin-top:18px"><h3>Benefícios conquistados</h3>'+history+'</div>'+
-'</div>';
-}
-
 function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(!demoMode){if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();}if(id==='beneficios')loadBenefits();if(id==='fidelidade')loadFidelityParticipants();
+if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='beneficios')loadBenefits();
 }
 async function entrar(){
 msg.textContent='Entrando...';
 const r=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});
 if(r.error){msg.textContent=r.error.message;return}
-login.style.display='none';app.style.display='block';await loadDashboard();await loadParticipants();
+login.style.display='none';app.style.display='block';await loadDashboard();
 }
-async function init(){
-  const r=await db.auth.getSession();
-  if(r.data.session){
-    login.style.display='none';
-    app.style.display='block';
-    await loadDashboard();
-    await loadParticipants();
-  }
-}
+async function init(){const r=await db.auth.getSession();if(r.data.session){login.style.display='none';app.style.display='block';await loadDashboard();}}
 async function loadDashboard(){
-  const cards=[
-    ['participantes','cp','Participantes'],
-    ['trilhas','ct','Trilhas'],
-    ['participacoes','cx','Participações'],
-    ['beneficios','cb','Benefícios']
-  ];
-
-  cards.forEach(([,id])=>{
-    const el=document.getElementById(id);
-    if(el) el.textContent='…';
-  });
-
-  for(const [table,id,label] of cards){
-    const el=document.getElementById(id);
-    try{
-      const r=await db.from(table).select('id',{count:'exact',head:true});
-      if(r.error) throw r.error;
-      if(el) el.textContent=String(r.count??0);
-    }catch(e){
-      if(el) el.textContent='—';
-      console.error('Dashboard '+label+':',e);
-      if(typeof toast==='function') toast('Erro ao carregar '+label+': '+(e.message||'verifique as permissões do Supabase.'));
-    }
-  }
-}
-
+for(const [table,id] of [['participantes','cp'],['trilhas','ct'],['participacoes','cx'],['beneficios','cb']]){
+const r=await db.from(table).select('*',{count:'exact',head:true});document.getElementById(id).textContent=r.count??0;
+}}
 async function loadParticipants(){
-  const r=await db.from('participantes')
-    .select('id,nome,telefone,email,cidade')
-    .order('nome');
-
-  if(r.error){
-    participants=[];
-    renderParticipants();
-    console.error('Participantes:',r.error);
-    if(typeof toast==='function') toast('Erro ao carregar participantes: '+(r.error.message||'verifique as permissões do Supabase.'));
-    return;
-  }
-
-  participants=r.data||[];
-  renderParticipants();
+const r=await db.from('participantes').select('id,nome,telefone,email,cidade').order('nome');if(r.error){console.error(r.error);return}
+participants=r.data||[];renderParticipants();
 }
-
 function renderParticipants(){
 const q=(document.getElementById('search').value||'').toLowerCase();
 const arr=participants.filter(p=>[p.nome,p.telefone,p.email,p.cidade].join(' ').toLowerCase().includes(q));
 tbody.innerHTML=arr.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>'+esc(p.telefone||'')+'</td><td>'+esc(p.cidade||'')+'</td><td>ATIVO</td><td><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></td></tr>').join('');
 mobileList.innerHTML=arr.map(p=>'<div class="mob-card"><strong>'+esc(p.nome)+'</strong><small>'+esc(p.telefone||'Sem telefone')+' · '+esc(p.cidade||'')+'</small><br><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></div>').join('')||'<div class="empty">Nenhum participante encontrado.</div>';
 }
-function demo(){
-demoMode=true;login.style.display='none';app.style.display='block';demoBanner.style.display='block';
-cp.textContent='24';ct.textContent='18';cx.textContent='67';cb.textContent='3';
-participants=[{id:'demo1',nome:'Exemplo de participante',telefone:'(21) 99999-9999',email:'exemplo@reconec.tour',cidade:'Rio de Janeiro'}];benefits=[{id:'b1',nome:'50% de desconto',descricao:'50% de desconto na próxima trilha.',quantidade_trilhas:4,tipo:'desconto',ativo:true},{id:'b2',nome:'1 trilha gratuita',descricao:'Direito a 1 trilha gratuita.',quantidade_trilhas:6,tipo:'gratuidade',ativo:true},{id:'b3',nome:'Grupo VIP',descricao:'Acesso ao Grupo VIP da Reconec.tour.',quantidade_trilhas:8,tipo:'vip',ativo:true}];renderBenefits();
-}
-function openModal(){if(demoMode){alert('A pré-visualização não grava dados. Para cadastrar, entre com a conta administrativa.');return}modal.classList.add('active')}
+function openModal(){modal.classList.add('active')}
 function closeModal(){modal.classList.remove('active')}
 async function saveParticipant(){
-const p={
-nome_completo:pn.value.trim(),
-data_nascimento:pd.value||null,
-telefone:pt.value.trim(),
-email:pe.value.trim(),
-bairro:pb.value.trim(),
-cidade:pc.value.trim(),
-transporte:px.value.trim()
-};
-if(!p.nome_completo){alert('Informe o nome completo.');return}
-const r=await db.rpc('criar_participante',{
-p_nome_completo:p.nome_completo,
-p_data_nascimento:p.data_nascimento,
-p_telefone:p.telefone,
-p_email:p.email,
-p_bairro:p.bairro,
-p_cidade:p.cidade,
-p_transporte:p.transporte
-});
-if(r.error){alert('Não foi possível cadastrar o participante: '+r.error.message);return}
-closeModal();
-['pn','pd','pt','pe','pb','pc','px'].forEach(id=>document.getElementById(id).value='');
-await loadParticipants();
-await loadDashboard();
+const p={nome:pn.value.trim(),data_nascimento:pd.value||null,telefone:pt.value.trim(),email:pe.value.trim(),bairro:pb.value.trim(),cidade:pc.value.trim(),transporte:px.value.trim()};
+if(!p.nome){alert('Informe o nome completo.');return}
+const r=await db.from('participantes').insert(p);if(r.error){alert(r.error.message);return}
+closeModal();['pn','pd','pt','pe','pb','pc','px'].forEach(id=>document.getElementById(id).value='');await loadParticipants();await loadDashboard();
 }
 
 async function loadBenefits(){
-if(demoMode){renderBenefits();return}
 const r=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true});
 if(r.error){console.error(r.error);alert('Não foi possível carregar os benefícios: '+r.error.message);return}
 benefits=r.data||[];renderBenefits();
@@ -391,7 +231,6 @@ el.innerHTML=arr.map(b=>`<div class="benefit-card">
 <div class="benefit-actions"><button class="btn" onclick="editBenefit('${b.id}')">Editar</button><button class="btn toggle" onclick="toggleBenefit('${b.id}',${!b.ativo})">${b.ativo?'Desativar':'Ativar'}</button></div></div>`).join('');
 }
 function openBenefitModal(id=null){
-if(demoMode){alert('A pré-visualização não grava alterações. Entre com a conta administrativa para editar benefícios.');return}
 editingBenefitId=id;
 const b=id?benefits.find(x=>String(x.id)===String(id)):null;
 document.getElementById('benefitModalTitle').textContent=b?'Editar benefício':'Novo benefício';
@@ -409,7 +248,6 @@ if(r.error){alert('Não foi possível salvar: '+r.error.message);return}
 closeBenefitModal();await loadBenefits();await loadDashboard();
 }
 async function toggleBenefit(id,ativo){
-if(demoMode){alert('A pré-visualização não grava alterações.');return}
 if(ativo && benefits.some(b=>Number(b.quantidade_trilhas)===Number(benefits.find(x=>x.id===id)?.quantidade_trilhas) && b.ativo && b.id!==id)){alert('Já existe um benefício ativo com essa quantidade de trilhas.');return}
 const r=await db.from('beneficios').update({ativo}).eq('id',id);if(r.error){alert('Não foi possível alterar o status: '+r.error.message);return}
 await loadBenefits();await loadDashboard();
