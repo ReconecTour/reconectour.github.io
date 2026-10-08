@@ -67,8 +67,9 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 .mobile-nav span{display:block;font-size:18px;margin-bottom:3px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.top-logo{width:60px;height:60px;border:0;outline:0;box-shadow:none;background:transparent}.top{gap:11px}.top-site-link{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border:1px solid var(--line);border-radius:7px;background:rgba(217,173,69,.08);color:var(--cream);text-decoration:none;font-size:13px;white-space:nowrap}.top-site-link:hover{border-color:var(--gold);color:var(--gold);background:rgba(217,173,69,.12)}
 }
 
+.trail-list{display:grid;gap:10px}.trail-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:15px;border:1px solid var(--line);border-radius:8px;background:rgba(23,56,43,.42)}.trail-title{font:400 19px Georgia;color:var(--cream)}.trail-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}.trail-meta .tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);padding:5px 7px;border-radius:20px}.trail-desc{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.45}.trail-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.trail-actions .btn{min-width:90px}.trail-status-on{color:#9fd6a8}.trail-status-off{color:#d9a7a0}
 .benefit-list{display:grid;gap:10px}.benefit-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:15px;border:1px solid var(--line);border-radius:8px;background:rgba(23,56,43,.42)}.benefit-main{min-width:0}.benefit-title{font:400 19px Georgia;color:var(--cream)}.benefit-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}.tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);padding:5px 7px;border-radius:20px}.benefit-desc{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.45}.benefit-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.status-on{color:#9fd6a8}.status-off{color:#d9a7a0}.toggle{font-size:11px}.modal-box h2{margin:0 0 18px;font:400 25px Georgia}.field select,.field textarea{padding:12px;background:#0d2b21;border:1px solid var(--line);border-radius:6px;color:var(--cream);outline:0;font-size:16px;line-height:1.45}.field textarea{min-height:90px;resize:vertical}.field input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}.check-row{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px;padding-top:5px}
-@media(max-width:800px){.benefit-card{grid-template-columns:1fr}.benefit-actions{justify-content:flex-start}.benefit-actions .btn{flex:1;min-width:105px}.top-site-link{padding:9px 11px;font-size:12px}.top-site-link .site-label{display:none}}
+@media(max-width:800px){.trail-card{grid-template-columns:1fr}.trail-actions{justify-content:flex-start}.trail-actions .btn{flex:1;min-width:110px}.benefit-card{grid-template-columns:1fr}.benefit-actions{justify-content:flex-start}.benefit-actions .btn{flex:1;min-width:105px}.top-site-link{padding:9px 11px;font-size:12px}.top-site-link .site-label{display:none}}
 </style>
 </head>
 <body>
@@ -134,7 +135,12 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div id="mobileList"></div>
 </div></section>
 
-<section id="trilhas" class="section"><div class="panel"><h2>Trilhas</h2><div class="empty">Módulo preparado para cadastro, edição, ativação e desativação das trilhas.</div></div></section>
+<section id="trilhas" class="section">
+<div class="panel">
+<div class="panel-head"><div><h2>Trilhas</h2><div class="sub" style="margin-top:5px">Cadastre os destinos e mantenha as informações usadas pelo Passaporte.</div></div><button class="btn primary" onclick="openTrailModal()">+ Nova trilha</button></div>
+<input id="trailSearch" class="search" placeholder="Buscar por nome ou local..." oninput="renderTrails()">
+<div id="trailList" class="trail-list"></div>
+</div></section>
 <section id="participacoes" class="section"><div class="panel"><h2>Participações</h2><div class="empty">Módulo preparado para registrar participante, trilha, data e observação. O gatilho de fidelidade já está no banco.</div></div></section>
 <section id="beneficios" class="section">
 <div class="panel">
@@ -178,6 +184,19 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="field full"><label>Observações</label><textarea id="so" placeholder="Observações adicionais de segurança e saúde."></textarea></div>
 </div>
 <div class="modal-actions"><button id="participantCancelBtn" class="btn" onclick="closeModal()">Cancelar</button><button id="participantSaveBtn" class="btn primary" onclick="saveParticipant()">Salvar</button></div>
+</div></div>
+
+<div class="modal" id="trailModal"><div class="modal-box"><h2 id="trailModalTitle">Nova trilha</h2>
+<div class="form-grid">
+<div class="field full"><label>Nome</label><input id="tn" placeholder="Nome da trilha"></div>
+<div class="field full"><label>Local</label><input id="tl" placeholder="Local / região"></div>
+<div class="field"><label>Dificuldade</label><select id="td"><option value="">Selecione</option><option value="Fácil">Fácil</option><option value="Moderada leve">Moderada leve</option><option value="Moderada superior">Moderada superior</option><option value="Difícil">Difícil</option></select></div>
+<div class="field"><label>Distância (km)</label><input id="tq" type="number" min="0" step="0.1" placeholder="Ex.: 4,5"></div>
+<div class="field"><label>Duração (minutos)</label><input id="tm" type="number" min="1" step="1" placeholder="Ex.: 150"></div>
+<div class="field"><label>Status</label><select id="ta"><option value="true">Ativa</option><option value="false">Inativa</option></select></div>
+<div class="field full"><label>Descrição</label><textarea id="tx" placeholder="Descrição da trilha, percurso ou informações relevantes."></textarea></div>
+</div>
+<div class="modal-actions"><button id="trailCancelBtn" class="btn" onclick="closeTrailModal()">Cancelar</button><button id="trailSaveBtn" class="btn primary" onclick="saveTrail()">Salvar trilha</button></div>
 </div></div>
 
 <div class="modal" id="benefitModal"><div class="modal-box"><h2 id="benefitModalTitle">Novo benefício</h2>
@@ -230,6 +249,19 @@ const sm=document.getElementById('sm');
 const sr=document.getElementById('sr');
 const so=document.getElementById('so');
 let editingParticipantId=null;
+const trailModal=document.getElementById('trailModal');
+const trailModalTitle=document.getElementById('trailModalTitle');
+const tn=document.getElementById('tn');
+const tl=document.getElementById('tl');
+const td=document.getElementById('td');
+const tq=document.getElementById('tq');
+const tm=document.getElementById('tm');
+const ta=document.getElementById('ta');
+const tx=document.getElementById('tx');
+const trailList=document.getElementById('trailList');
+const trailSearch=document.getElementById('trailSearch');
+const trailSaveBtn=document.getElementById('trailSaveBtn');
+let trails=[],editingTrailId=null;
 const benefitModal=document.getElementById('benefitModal');
 const benefitModalTitle=document.getElementById('benefitModalTitle');
 const bn=document.getElementById('bn');
@@ -246,7 +278,7 @@ function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='beneficios')loadBenefits();
+if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='beneficios')loadBenefits();
 }
 async function entrar(){
 msg.textContent='Entrando...';
@@ -424,6 +456,76 @@ async function editParticipant(id){
   so.value=m.observacoes||'';
 }
 
+async function loadTrails(){
+  const r=await db.from('trilhas').select('id,nome,local,ativa,criado_em,dificuldade,distancia_km,duracao_minutos,descricao').order('nome',{ascending:true});
+  if(r.error){
+    trails=[]; renderTrails();
+    console.error('Trilhas:',r.error);
+    trailList.innerHTML='<div class="empty">Não foi possível carregar as trilhas.\n<br><small>'+esc(r.error.message||'Verifique a estrutura e as permissões da tabela trilhas.')+'</small></div>';
+    return;
+  }
+  trails=Array.isArray(r.data)?r.data:[];
+  renderTrails();
+}
+function formatDuration(minutes){
+  const n=Number(minutes);
+  if(!Number.isFinite(n)||n<=0)return '';
+  const h=Math.floor(n/60), m=Math.round(n%60);
+  if(h&&m)return h+'h'+String(m).padStart(2,'0');
+  if(h)return h+'h';
+  return m+'min';
+}
+function renderTrails(){
+  if(!trailList)return;
+  const q=String(trailSearch?.value||'').trim().toLowerCase();
+  const arr=trails.filter(t=>String(t.nome||'').toLowerCase().includes(q)||String(t.local||'').toLowerCase().includes(q));
+  trailList.innerHTML=arr.map(t=>{
+    const meta=[];
+    if(t.local)meta.push(esc(t.local));
+    if(t.dificuldade)meta.push(esc(t.dificuldade));
+    if(t.distancia_km!==null&&t.distancia_km!==undefined&&t.distancia_km!=='')meta.push(String(t.distancia_km).replace('.',',')+' km');
+    if(t.duracao_minutos)meta.push(formatDuration(t.duracao_minutos));
+    meta.push(t.ativa===false?'<span class="trail-status-off">Inativa</span>':'<span class="trail-status-on">Ativa</span>');
+    return '<div class="trail-card"><div><div class="trail-title">'+esc(t.nome||'Sem nome')+'</div><div class="trail-meta">'+meta.map(x=>'<span class="tag">'+x+'</span>').join('')+'</div>'+(t.descricao?'<div class="trail-desc">'+esc(t.descricao)+'</div>':'')+'</div><div class="trail-actions"><button class="btn" onclick="editTrail(\''+t.id+'\')">Editar</button><button class="btn" onclick="toggleTrail(\''+t.id+'\','+(t.ativa===false?'true':'false')+')">'+(t.ativa===false?'Ativar':'Desativar')+'</button></div></div>';
+  }).join('')||'<div class="empty">Nenhuma trilha cadastrada.</div>';
+}
+function clearTrailForm(){
+  [tn,tl,td,tq,tm,tx].forEach(el=>{if(el)el.value=''});
+  ta.value='true';
+  trailSaveBtn.disabled=false; trailSaveBtn.textContent='Salvar trilha';
+}
+function openTrailModal(id=null){
+  editingTrailId=id||null; clearTrailForm();
+  trailModalTitle.textContent=id?'Editar trilha':'Nova trilha';
+  if(id){
+    const t=trails.find(x=>x.id===id);
+    if(!t)return;
+    tn.value=t.nome||'';tl.value=t.local||'';td.value=t.dificuldade||'';tq.value=t.distancia_km??'';tm.value=t.duracao_minutos??'';ta.value=String(t.ativa!==false);tx.value=t.descricao||'';
+  }
+  trailModal.classList.add('active');
+}
+function closeTrailModal(){trailModal.classList.remove('active');editingTrailId=null}
+async function saveTrail(){
+  const nome=tn.value.trim();
+  if(!nome){alert('Informe o nome da trilha.');return;}
+  const distancia=tq.value===''?null:Number(String(tq.value).replace(',','.'));
+  const duracao=tm.value===''?null:parseInt(tm.value,10);
+  if(distancia!==null&&(!Number.isFinite(distancia)||distancia<0)){alert('Informe uma distância válida.');return;}
+  if(duracao!==null&&(!Number.isInteger(duracao)||duracao<1)){alert('Informe uma duração válida em minutos.');return;}
+  const payload={nome,local:tl.value.trim()||null,dificuldade:td.value||null,distancia_km:distancia,duracao_minutos:duracao,descricao:tx.value.trim()||null,ativa:ta.value==='true'};
+  trailSaveBtn.disabled=true; trailSaveBtn.textContent='Salvando...';
+  let r;
+  if(editingTrailId) r=await db.from('trilhas').update(payload).eq('id',editingTrailId).select('id').single();
+  else r=await db.from('trilhas').insert(payload).select('id').single();
+  if(r.error){trailSaveBtn.disabled=false;trailSaveBtn.textContent='Salvar trilha';alert('Não foi possível salvar a trilha.\n\n'+r.error.message);return;}
+  closeTrailModal(); await loadTrails(); await loadDashboard();
+}
+async function editTrail(id){openTrailModal(id)}
+async function toggleTrail(id,ativa){
+  const r=await db.from('trilhas').update({ativa}).eq('id',id).select('id').single();
+  if(r.error){alert('Não foi possível alterar o status da trilha.\n\n'+r.error.message);return;}
+  await loadTrails(); await loadDashboard();
+}
 async function loadBenefits(){
 const r=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true});
 if(r.error){console.error(r.error);alert('Não foi possível carregar os benefícios: '+r.error.message);return}
