@@ -149,15 +149,30 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <button data-section="fidelidade"><span>◇</span>Fidelidade</button>
 </nav>
 
-<div class="modal" id="modal"><div class="modal-box"><h2>Novo participante</h2>
+<div class="modal" id="modal"><div class="modal-box"><h2 id="participantModalTitle">Novo participante</h2>
 <div class="form-grid">
 <div class="field full"><label>Nome completo</label><input id="pn"></div>
 <div class="field"><label>Data de nascimento</label><input id="pd" type="date"></div>
-<div class="field"><label>Telefone</label><input id="pt"></div>
+<div class="field"><label>WhatsApp / telefone</label><input id="pt"></div>
 <div class="field"><label>E-mail</label><input id="pe" type="email"></div>
 <div class="field"><label>Bairro</label><input id="pb"></div>
 <div class="field"><label>Cidade</label><input id="pc"></div>
 <div class="field"><label>Transporte</label><input id="px"></div>
+<div class="field"><label>Status</label><select id="ps"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
+<div class="field full"><label>Código do passaporte</label><input id="ppass" readonly></div>
+
+<div class="field full"><label>Contato de emergência</label></div>
+<div class="field"><label>Nome</label><input id="en"></div>
+<div class="field"><label>Parentesco</label><input id="ep"></div>
+<div class="field"><label>Telefone</label><input id="et"></div>
+<div class="field full"><label>Observação</label><textarea id="eo"></textarea></div>
+
+<div class="field full"><label>Informações de segurança e saúde</label></div>
+<div class="field full"><label>Alergias</label><textarea id="sa"></textarea></div>
+<div class="field full"><label>Condições médicas</label><textarea id="sc"></textarea></div>
+<div class="field full"><label>Medicamentos</label><textarea id="sm"></textarea></div>
+<div class="field full"><label>Restrições de atividades</label><textarea id="sr"></textarea></div>
+<div class="field full"><label>Observações</label><textarea id="so"></textarea></div>
 </div>
 <div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveParticipant()">Salvar</button></div>
 </div></div>
@@ -197,6 +212,19 @@ const pe=document.getElementById('pe');
 const pb=document.getElementById('pb');
 const pc=document.getElementById('pc');
 const px=document.getElementById('px');
+const ps=document.getElementById('ps');
+const ppass=document.getElementById('ppass');
+const participantModalTitle=document.getElementById('participantModalTitle');
+const en=document.getElementById('en');
+const ep=document.getElementById('ep');
+const et=document.getElementById('et');
+const eo=document.getElementById('eo');
+const sa=document.getElementById('sa');
+const sc=document.getElementById('sc');
+const sm=document.getElementById('sm');
+const sr=document.getElementById('sr');
+const so=document.getElementById('so');
+let editingParticipantId=null;
 const benefitModal=document.getElementById('benefitModal');
 const benefitModalTitle=document.getElementById('benefitModalTitle');
 const bn=document.getElementById('bn');
@@ -265,13 +293,88 @@ const arr=participants.filter(p=>String(p.nome||'').toLowerCase().includes(q));
 tbody.innerHTML=arr.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>ATIVO</td><td><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></td></tr>').join('');
 mobileList.innerHTML=arr.map(p=>'<div class="mob-card"><strong>'+esc(p.nome)+'</strong><small>Participante cadastrado</small><br><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></div>').join('')||'<div class="empty">Nenhum participante encontrado.</div>';
 }
-function openModal(){modal.classList.add('active')}
-function closeModal(){modal.classList.remove('active')}
+function clearParticipantForm(){
+  [pn,pd,pt,pe,pb,pc,px,ps,ppass,en,ep,et,eo,sa,sc,sm,sr,so].forEach(el=>{if(el)el.value=''});
+  ps.value='ativo';
+}
+function openModal(id=null){
+  editingParticipantId=id||null;
+  clearParticipantForm();
+  participantModalTitle.textContent=id?'Editar participante':'Novo participante';
+  ppass.value='';
+  modal.classList.add('active');
+}
+function closeModal(){modal.classList.remove('active');editingParticipantId=null}
 async function saveParticipant(){
-const p={nome:pn.value.trim(),data_nascimento:pd.value||null,telefone:pt.value.trim(),email:pe.value.trim(),bairro:pb.value.trim(),cidade:pc.value.trim(),transporte:px.value.trim()};
-if(!p.nome){alert('Informe o nome completo.');return}
-const r=await db.rpc('criar_participante',{p_nome_completo:p.nome,p_data_nascimento:p.data_nascimento,p_telefone:p.telefone,p_email:p.email,p_bairro:p.bairro,p_cidade:p.cidade,p_transporte:p.transporte});if(r.error){alert(r.error.message);return}
-closeModal();['pn','pd','pt','pe','pb','pc','px'].forEach(id=>document.getElementById(id).value='');await loadParticipants();await loadDashboard();
+  const p={nome:pn.value.trim(),data_nascimento:pd.value||null,whatsapp:pt.value.trim()||null,email:pe.value.trim()||null,bairro:pb.value.trim()||null,cidade:pc.value.trim()||null,transporte:px.value.trim()||null,status:ps.value||'ativo'};
+  if(!p.nome){alert('Informe o nome completo.');return}
+  let r;
+  if(editingParticipantId){
+    r=await db.from('participantes').update({...p,atualizado_em:new Date().toISOString()}).eq('id',editingParticipantId).select('id').single();
+  }else{
+    r=await db.rpc('criar_participante',{p_nome_completo:p.nome,p_data_nascimento:p.data_nascimento,p_telefone:p.whatsapp,p_email:p.email,p_bairro:p.bairro,p_cidade:p.cidade,p_transporte:p.transporte});
+  }
+  if(r.error){alert('Não foi possível salvar o participante.\n\n'+r.error.message);return}
+  const id=editingParticipantId||r.data;
+  if(id){
+    const emergency={nome:en.value.trim()||null,parentesco:ep.value.trim()||null,telefone:et.value.trim()||null,observação:eo.value.trim()||null};
+    const medical={alergias:sa.value.trim()||null,condicoes_medicas:sc.value.trim()||null,medicamentos:sm.value.trim()||null,restricoes_atividades:sr.value.trim()||null,observacoes:so.value.trim()||null};
+    const [ce,ms]=await Promise.all([
+      db.from('contatos_emergencia').select('id').eq('participante_id',id).maybeSingle(),
+      db.from('informacoes_seguranca').select('id').eq('participante_id',id).maybeSingle()
+    ]);
+    if(ce.error){alert('Participante salvo, mas não foi possível consultar o contato de emergência.\n\n'+ce.error.message);return}
+    if(ms.error){alert('Participante salvo, mas não foi possível consultar as informações de segurança.\n\n'+ms.error.message);return}
+    const hasEmergency=Object.values(emergency).some(v=>v!==null&&v!=='');
+    const hasMedical=Object.values(medical).some(v=>v!==null&&v!=='');
+    const eop=ce.data?.id
+      ? db.from('contatos_emergencia').update(emergency).eq('id',ce.data.id)
+      : (hasEmergency ? db.from('contatos_emergencia').insert({...emergency,participante_id:id}) : Promise.resolve({error:null}));
+    const msp=ms.data?.id
+      ? db.from('informacoes_seguranca').update(medical).eq('id',ms.data.id)
+      : (hasMedical ? db.from('informacoes_seguranca').insert({...medical,participante_id:id}) : Promise.resolve({error:null}));
+    const [er,mr]=await Promise.all([eop,msp]);
+    if(er.error||mr.error){
+      const erros=[er.error?.message,mr.error?.message].filter(Boolean).join('\n\n');
+      alert('O cadastro principal foi salvo, mas houve problema ao salvar os dados complementares.\n\n'+erros);
+      return;
+    }
+  }
+  closeModal();
+  await loadParticipants();
+  await loadDashboard();
+}
+
+async function editParticipant(id){
+  if(!id)return;
+  const [pr,er,mr]=await Promise.all([
+    db.from('participantes').select('id,nome,whatsapp,data_nascimento,codigo_passaporte,status,email,bairro,cidade,transporte').eq('id',id).single(),
+    db.from('contatos_emergencia').select('id,nome,parentesco,telefone,observação').eq('participante_id',id).maybeSingle(),
+    db.from('informacoes_seguranca').select('id,alergias,condicoes_medicas,medicamentos,restricoes_atividades,observacoes').eq('participante_id',id).maybeSingle()
+  ]);
+  if(pr.error){alert('Não foi possível carregar o participante.\n\n'+pr.error.message);return}
+  if(er.error){alert('Não foi possível carregar o contato de emergência.\n\n'+er.error.message);return}
+  if(mr.error){alert('Não foi possível carregar as informações de segurança.\n\n'+mr.error.message);return}
+  openModal(id);
+  const p=pr.data||{}, e=er.data||{}, m=mr.data||{};
+  pn.value=p.nome||'';
+  pd.value=p.data_nascimento||'';
+  pt.value=p.whatsapp||'';
+  pe.value=p.email||'';
+  pb.value=p.bairro||'';
+  pc.value=p.cidade||'';
+  px.value=p.transporte||'';
+  ps.value=p.status||'ativo';
+  ppass.value=p.codigo_passaporte||'';
+  en.value=e.nome||'';
+  ep.value=e.parentesco||'';
+  et.value=e.telefone||'';
+  eo.value=e.observação||'';
+  sa.value=m.alergias||'';
+  sc.value=m.condicoes_medicas||'';
+  sm.value=m.medicamentos||'';
+  sr.value=m.restricoes_atividades||'';
+  so.value=m.observacoes||'';
 }
 
 async function loadBenefits(){
@@ -311,7 +414,6 @@ await loadBenefits();await loadDashboard();
 }
 function editBenefit(id){openBenefitModal(id)}
 
-function editParticipant(){alert('A edição completa será ativada na próxima etapa do módulo Participantes.')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 init();
 </script>
