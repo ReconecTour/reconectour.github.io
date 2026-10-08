@@ -177,6 +177,34 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 const SUPABASE_URL='https://soziosuowvgrtmmshwpl.supabase.co';
 const SUPABASE_KEY='sb_publishable_xPIQdeLUmGd7hdG3QZG9Sw_BcH6RDWv';
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+// Referências explícitas aos elementos DOM. Evita depender de variáveis globais
+// criadas automaticamente pelos IDs, comportamento inconsistente entre navegadores.
+const login=document.getElementById('login');
+const app=document.getElementById('app');
+const email=document.getElementById('email');
+const password=document.getElementById('password');
+const msg=document.getElementById('msg');
+const title=document.getElementById('title');
+const subtitle=document.getElementById('subtitle');
+const tbody=document.getElementById('tbody');
+const mobileList=document.getElementById('mobileList');
+const search=document.getElementById('search');
+const modal=document.getElementById('modal');
+const pn=document.getElementById('pn');
+const pd=document.getElementById('pd');
+const pt=document.getElementById('pt');
+const pe=document.getElementById('pe');
+const pb=document.getElementById('pb');
+const pc=document.getElementById('pc');
+const px=document.getElementById('px');
+const benefitModal=document.getElementById('benefitModal');
+const benefitModalTitle=document.getElementById('benefitModalTitle');
+const bn=document.getElementById('bn');
+const bd=document.getElementById('bd');
+const bq=document.getElementById('bq');
+const bt=document.getElementById('bt');
+const ba=document.getElementById('ba');
+const benefitList=document.getElementById('benefitList');
 let participants=[],benefits=[],editingBenefitId=null;
 const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],participantes:['Participantes','Cadastros e gestão dos participantes'],trilhas:['Trilhas','Destinos cadastrados na Reconec.tour'],participacoes:['Participações','Histórico de presença nas trilhas'],beneficios:['Benefícios','Regras e benefícios do Passaporte'],fidelidade:['Fidelidade','Ciclos e conquistas dos participantes']};
 
@@ -219,12 +247,20 @@ if(failures && typeof toast==='function'){
 }
 }
 async function loadParticipants(){
-const r=await db.from('participantes').select('id,nome,telefone,email,cidade').order('nome');
-if(r.error){participants=[];renderParticipants();console.error('Participantes:',r.error);if(typeof toast==='function')toast('Erro ao carregar participantes: '+(r.error.message||'verifique as permissões do Supabase.'));return}
-participants=r.data||[];renderParticipants();
+const r=await db.from('participantes').select('id,nome,telefone,email,cidade').order('nome',{ascending:true});
+if(r.error){
+  participants=[];
+  renderParticipants();
+  console.error('Participantes:',r.error);
+  const detalhe=r.error.message||'erro desconhecido';
+  alert('Não foi possível carregar os participantes.\n\n'+detalhe);
+  return;
+}
+participants=Array.isArray(r.data)?r.data:[];
+renderParticipants();
 }
 function renderParticipants(){
-const q=(document.getElementById('search').value||'').toLowerCase();
+const q=(search.value||'').toLowerCase();
 const arr=participants.filter(p=>[p.nome,p.telefone,p.email,p.cidade].join(' ').toLowerCase().includes(q));
 tbody.innerHTML=arr.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>'+esc(p.telefone||'')+'</td><td>'+esc(p.cidade||'')+'</td><td>ATIVO</td><td><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></td></tr>').join('');
 mobileList.innerHTML=arr.map(p=>'<div class="mob-card"><strong>'+esc(p.nome)+'</strong><small>'+esc(p.telefone||'Sem telefone')+' · '+esc(p.cidade||'')+'</small><br><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></div>').join('')||'<div class="empty">Nenhum participante encontrado.</div>';
