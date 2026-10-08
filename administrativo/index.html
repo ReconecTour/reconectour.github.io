@@ -126,8 +126,8 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 
 <section id="participantes" class="section">
 <div class="panel"><div class="panel-head"><h2>Participantes</h2><button class="btn primary" onclick="openModal()">+ Novo</button></div>
-<input id="search" class="search" placeholder="Buscar por nome, telefone ou e-mail..." oninput="renderParticipants()">
-<div class="desktop-table"><table><thead><tr><th>Nome</th><th>Telefone</th><th>Cidade</th><th>Status</th><th>Ação</th></tr></thead><tbody id="tbody"></tbody></table></div>
+<input id="search" class="search" placeholder="Buscar por nome..." oninput="renderParticipants()">
+<div class="desktop-table"><table><thead><tr><th>Nome</th><th>Status</th><th>Ação</th></tr></thead><tbody id="tbody"></tbody></table></div>
 <div id="mobileList"></div>
 </div></section>
 
@@ -247,7 +247,7 @@ if(failures && typeof toast==='function'){
 }
 }
 async function loadParticipants(){
-const r=await db.from('participantes').select('id,nome,telefone,email,cidade').order('nome',{ascending:true});
+const r=await db.from('participantes').select('id,nome').order('nome',{ascending:true});
 if(r.error){
   participants=[];
   renderParticipants();
@@ -261,9 +261,9 @@ renderParticipants();
 }
 function renderParticipants(){
 const q=(search.value||'').toLowerCase();
-const arr=participants.filter(p=>[p.nome,p.telefone,p.email,p.cidade].join(' ').toLowerCase().includes(q));
-tbody.innerHTML=arr.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>'+esc(p.telefone||'')+'</td><td>'+esc(p.cidade||'')+'</td><td>ATIVO</td><td><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></td></tr>').join('');
-mobileList.innerHTML=arr.map(p=>'<div class="mob-card"><strong>'+esc(p.nome)+'</strong><small>'+esc(p.telefone||'Sem telefone')+' · '+esc(p.cidade||'')+'</small><br><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></div>').join('')||'<div class="empty">Nenhum participante encontrado.</div>';
+const arr=participants.filter(p=>String(p.nome||'').toLowerCase().includes(q));
+tbody.innerHTML=arr.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>ATIVO</td><td><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></td></tr>').join('');
+mobileList.innerHTML=arr.map(p=>'<div class="mob-card"><strong>'+esc(p.nome)+'</strong><small>Participante cadastrado</small><br><button class="btn" onclick="editParticipant(\''+p.id+'\')">Editar</button></div>').join('')||'<div class="empty">Nenhum participante encontrado.</div>';
 }
 function openModal(){modal.classList.add('active')}
 function closeModal(){modal.classList.remove('active')}
