@@ -154,30 +154,30 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 
 <div class="modal" id="modal"><div class="modal-box"><h2 id="participantModalTitle">Novo participante</h2>
 <div class="form-grid">
-<div class="field full"><label>Nome completo</label><input id="pn"></div>
+<div class="field full"><label>Nome</label><input id="pn" placeholder=""></div>
 <div class="field"><label>Data de nascimento</label><input id="pd" type="date"></div>
-<div class="field"><label>WhatsApp / telefone</label><input id="pt"></div>
-<div class="field"><label>E-mail</label><input id="pe" type="email"></div>
-<div class="field"><label>Bairro</label><input id="pb"></div>
-<div class="field"><label>Cidade</label><input id="pc"></div>
-<div class="field"><label>Transporte</label><input id="px"></div>
+<div class="field"><label>WhatsApp / telefone</label><input id="pt" inputmode="numeric" autocomplete="tel" placeholder="(21) 99999-9999"></div>
+<div class="field"><label>E-mail</label><input id="pe" type="email" autocomplete="email" placeholder="Ex.: nome@email.com"></div>
+<div class="field"><label>Bairro</label><input id="pb" placeholder="Ex.: Tijuca"></div>
+<div class="field"><label>Cidade</label><input id="pc" placeholder="Ex.: Rio de Janeiro"></div>
+<div class="field"><label>Transporte</label><input id="px" placeholder="Ex.: Carona"></div>
 <div class="field"><label>Status</label><select id="ps"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
-<div class="field full"><label>Código do passaporte</label><input id="ppass" readonly></div>
+<div class="field full"><label>Código do passaporte</label><input id="ppass" readonly aria-readonly="true" placeholder="Será gerado automaticamente após salvar"></div>
 
 <div class="field full"><label>Contato de emergência</label></div>
-<div class="field"><label>Nome</label><input id="en"></div>
-<div class="field"><label>Parentesco</label><input id="ep"></div>
-<div class="field"><label>Telefone</label><input id="et"></div>
-<div class="field full"><label>Observação</label><textarea id="eo"></textarea></div>
+<div class="field"><label>Nome</label><input id="en" placeholder="Ex.: Maria da Silva"></div>
+<div class="field"><label>Parentesco</label><input id="ep" placeholder="Ex.: Mãe, pai, irmão, amigo..."></div>
+<div class="field"><label>Telefone</label><input id="et" inputmode="numeric" autocomplete="tel" placeholder="(21) 99999-9999"></div>
+<div class="field full"><label>Observação</label><textarea id="eo" placeholder="Informações úteis sobre o contato de emergência."></textarea></div>
 
 <div class="field full"><label>Informações de segurança e saúde</label></div>
-<div class="field full"><label>Alergias</label><textarea id="sa"></textarea></div>
-<div class="field full"><label>Condições médicas</label><textarea id="sc"></textarea></div>
-<div class="field full"><label>Medicamentos</label><textarea id="sm"></textarea></div>
-<div class="field full"><label>Restrições de atividades</label><textarea id="sr"></textarea></div>
-<div class="field full"><label>Observações</label><textarea id="so"></textarea></div>
+<div class="field full"><label>Alergias</label><textarea id="sa" placeholder="Informe alergias ou digite: Nenhuma"></textarea></div>
+<div class="field full"><label>Condições médicas</label><textarea id="sc" placeholder="Informe condições médicas ou digite: Nenhuma"></textarea></div>
+<div class="field full"><label>Medicamentos</label><textarea id="sm" placeholder="Informe medicamentos de uso contínuo ou digite: Nenhum"></textarea></div>
+<div class="field full"><label>Restrições de atividades</label><textarea id="sr" placeholder="Informe restrições para atividades ou digite: Nenhuma"></textarea></div>
+<div class="field full"><label>Observações</label><textarea id="so" placeholder="Observações adicionais de segurança e saúde."></textarea></div>
 </div>
-<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveParticipant()">Salvar</button></div>
+<div class="modal-actions"><button id="participantCancelBtn" class="btn" onclick="closeModal()">Cancelar</button><button id="participantSaveBtn" class="btn primary" onclick="saveParticipant()">Salvar</button></div>
 </div></div>
 
 <div class="modal" id="benefitModal"><div class="modal-box"><h2 id="benefitModalTitle">Novo benefício</h2>
@@ -218,6 +218,8 @@ const px=document.getElementById('px');
 const ps=document.getElementById('ps');
 const ppass=document.getElementById('ppass');
 const participantModalTitle=document.getElementById('participantModalTitle');
+const participantSaveBtn=document.getElementById('participantSaveBtn');
+const participantCancelBtn=document.getElementById('participantCancelBtn');
 const en=document.getElementById('en');
 const ep=document.getElementById('ep');
 const et=document.getElementById('et');
@@ -318,12 +320,18 @@ bindPhoneMask(et);
 function clearParticipantForm(){
   [pn,pd,pt,pe,pb,pc,px,ps,ppass,en,ep,et,eo,sa,sc,sm,sr,so].forEach(el=>{if(el)el.value=''});
   ps.value='ativo';
+  ppass.readOnly=true;
+  ppass.placeholder='Será gerado automaticamente após salvar';
+  participantSaveBtn.disabled=false;
+  participantSaveBtn.textContent='Salvar';
+  participantCancelBtn.textContent='Cancelar';
 }
 function openModal(id=null){
   editingParticipantId=id||null;
   clearParticipantForm();
   participantModalTitle.textContent=id?'Editar participante':'Novo participante';
   ppass.value='';
+  ppass.readOnly=true;
   modal.classList.add('active');
 }
 function closeModal(){modal.classList.remove('active');editingParticipantId=null}
@@ -362,9 +370,26 @@ async function saveParticipant(){
       return;
     }
   }
-  closeModal();
   await loadParticipants();
   await loadDashboard();
+
+  if(!editingParticipantId){
+    const codigo=await db.from('participantes').select('codigo_passaporte').eq('id',id).single();
+    if(codigo.error){
+      alert('Participante salvo, mas não foi possível carregar o código do passaporte.\n\n'+codigo.error.message);
+      return;
+    }
+    ppass.value=codigo.data?.codigo_passaporte||'';
+    ppass.readOnly=true;
+    ppass.placeholder='Código gerado automaticamente';
+    participantModalTitle.textContent='Participante cadastrado';
+    participantSaveBtn.disabled=true;
+    participantSaveBtn.textContent='Salvo';
+    participantCancelBtn.textContent='Fechar';
+    return;
+  }
+
+  closeModal();
 }
 
 async function editParticipant(id){
