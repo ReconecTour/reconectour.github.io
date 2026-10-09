@@ -40,7 +40,7 @@ main{margin-left:250px;padding:35px 5vw 90px}
 .top-logo{width:72px;height:72px;border-radius:50%;object-fit:contain;border:0;outline:0;box-shadow:none;background:transparent}
 .top h1{font:400 clamp(30px,4vw,46px) Georgia;margin:5px 0}
 .top .sub{color:var(--muted);font-size:13px}
-.section{display:none}.section.active{display:block}
+.section{display:none !important}.section.active{display:block !important}.section.fidelity-page{display:none !important}.section.fidelity-page.active{display:grid !important}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .card,.panel{background:rgba(23,56,43,.64);border:1px solid var(--line);border-radius:9px}
 .card{padding:20px}.label{font-size:10px;letter-spacing:2px;color:#9faea5;text-transform:uppercase}
@@ -74,7 +74,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 
 .fidelity-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:4px 0 16px}.fidelity-filters select{width:100%;padding:12px;background:#0d2b21;border:1px solid var(--line);border-radius:7px;color:var(--cream);font:inherit}.fidelity-filters .field{display:grid;gap:6px}.fidelity-filters label{font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase}@media(max-width:800px){.fidelity-filters{grid-template-columns:1fr}}
 /* Organização da página Fidelidade */
-.fidelity-page{display:grid;gap:16px}
+.fidelity-page{display:grid;gap:16px}.section.fidelity-page{display:none}.section.fidelity-page.active{display:grid}
 .fidelity-page>.panel{margin:0}
 .fidelity-intro{padding:clamp(18px,3vw,28px)}
 .fidelity-page-head{align-items:center;margin:0;gap:18px}
@@ -445,11 +445,16 @@ const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],
 
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.section)));
 function go(id){
-document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
+const target=document.getElementById(id);if(!target||!target.classList.contains('section'))return;
+document.querySelectorAll('.section').forEach(x=>{x.classList.remove('active');x.style.display='none';});target.classList.add('active');target.style.display=id==='fidelidade'?'grid':'block';
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
 if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios'){loadBenefits();loadReferralBenefits();}if(id==='fidelidade'){loadFidelity();loadReferralBenefits();}
 }
+// Garante que apenas a seção inicial esteja visível ao abrir o painel.
+document.querySelectorAll('.section').forEach(x=>{x.classList.remove('active');x.style.display='none';});
+const initialDashboard=document.getElementById('dashboard');if(initialDashboard){initialDashboard.classList.add('active');initialDashboard.style.display='block';}
+
 async function entrar(){
 msg.textContent='Entrando...';
 const r=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});
