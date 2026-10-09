@@ -145,6 +145,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="panel">
 <div class="panel-head"><div><h2>Participações e indicações</h2><div class="sub" style="margin-top:5px">Registre a presença e a quantidade de indicações atribuídas a cada participante nesta trilha.</div></div><button class="btn primary" onclick="openParticipationModal()">+ Registrar</button></div>
 <div class="cards" style="margin:14px 0"><div class="card"><div class="label">Registros</div><div class="value" id="participationCount">0</div><div class="note">participações cadastradas</div></div><div class="card"><div class="label">Indicações</div><div class="value" id="referralCount">0</div><div class="note">total registrado</div></div></div>
+<div class="panel" style="margin:14px 0"><div class="panel-head"><div><h3 style="margin:0">Acumulado individual de indicações</h3><div class="sub" style="margin-top:5px">Soma automática das indicações registradas em todas as trilhas de cada participante.</div></div></div><input id="referralSummarySearch" class="search" placeholder="Buscar participante no acumulado..." oninput="renderReferralSummary()"><div id="referralSummaryList" class="trail-list"><div class="empty">Carregando acumulados...</div></div></div>
 <input id="participationSearch" class="search" placeholder="Buscar participante ou trilha..." oninput="renderParticipations()">
 <div id="participationList" class="trail-list"><div class="empty">Carregando participações...</div></div>
 </div></section>
@@ -152,10 +153,16 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="panel">
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
 <div id="benefitList" class="benefit-list"></div>
+</div>
+<div class="panel">
+<div class="panel-head"><div><h2>Benefícios por indicações</h2><div class="sub" style="margin-top:5px">Patamares independentes da quantidade de trilhas. O acumulado é calculado individualmente por participante.</div></div><button class="btn primary" onclick="openReferralBenefitModal()">+ Novo patamar</button></div>
+<div id="referralBenefitList" class="benefit-list"><div class="empty">Carregando patamares...</div></div>
 </div></section>
 <section id="fidelidade" class="section">
 <div class="panel">
 <div class="panel-head"><div><h2>Fidelidade</h2><div class="sub" style="margin-top:5px">Conquistas registradas pelo banco a partir das participações. Consulte os benefícios disponíveis e os já utilizados.</div></div><button class="btn" onclick="loadFidelity()">Atualizar</button></div>
+<div class="panel" style="margin:0 0 16px"><div class="panel-head"><div><h3 style="margin:0">Progresso por indicações</h3><div class="sub" style="margin-top:5px">Acumulado individual e patamares alcançados, calculados a partir das participações.</div></div><button class="btn" onclick="loadReferralBenefits();loadFidelity()">Atualizar</button></div><div id="referralFidelityList" class="benefit-list"><div class="empty">Carregando progresso...</div></div></div>
+<div class="panel-head"><div><h2>Benefícios por trilhas</h2><div class="sub" style="margin-top:5px">Conquistas existentes vinculadas às regras por quantidade de trilhas.</div></div></div>
 <div id="fidelityList" class="benefit-list"><div class="empty">Carregue para consultar as conquistas reais.</div></div>
 </div></section>
 </main></div>
@@ -208,6 +215,16 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="field full"><label>Descrição</label><textarea id="tx" placeholder="Descrição da trilha, percurso ou informações relevantes."></textarea></div>
 </div>
 <div class="modal-actions"><button id="trailCancelBtn" class="btn" onclick="closeTrailModal()">Cancelar</button><button id="trailSaveBtn" class="btn primary" onclick="saveTrail()">Salvar trilha</button></div>
+</div></div>
+
+<div class="modal" id="referralBenefitModal"><div class="modal-box"><h2 id="referralBenefitModalTitle">Novo patamar de indicações</h2>
+<div class="form-grid">
+<div class="field full"><label>Nome do benefício</label><input id="rfn" placeholder="Ex.: Desconto especial"></div>
+<div class="field full"><label>Descrição</label><textarea id="rfd" placeholder="Descreva o benefício deste patamar."></textarea></div>
+<div class="field"><label>Quantidade mínima de indicações</label><input id="rfq" type="number" min="1" step="1" placeholder="Ex.: 10"></div>
+<div class="field full"><label>Status</label><div class="check-row"><input id="rfa" type="checkbox" checked><span>Patamar ativo</span></div></div>
+</div>
+<div class="modal-actions"><button class="btn" onclick="closeReferralBenefitModal()">Cancelar</button><button class="btn primary" onclick="saveReferralBenefit()">Salvar patamar</button></div>
 </div></div>
 
 <div class="modal" id="participationModal"><div class="modal-box"><h2 id="participationModalTitle">Registrar participação</h2>
@@ -293,6 +310,7 @@ const bt=document.getElementById('bt');
 const ba=document.getElementById('ba');
 const benefitList=document.getElementById('benefitList');
 let participants=[],benefits=[],editingBenefitId=null;
+let referralBenefits=[],editingReferralBenefitId=null;
 const participationModal=document.getElementById('participationModal');
 const participationModalTitle=document.getElementById('participationModalTitle');
 const partParticipant=document.getElementById('partParticipant');
@@ -311,7 +329,7 @@ function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios')loadBenefits();if(id==='fidelidade')loadFidelity();
+if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios'){loadBenefits();loadReferralBenefits();}if(id==='fidelidade'){loadFidelity();loadReferralBenefits();}
 }
 async function entrar(){
 msg.textContent='Entrando...';
@@ -576,6 +594,7 @@ async function loadParticipations(){
   trails=Array.isArray(tr.data)?tr.data:[];
   participations=Array.isArray(rr.data)?rr.data:[];
   renderParticipations();
+  renderReferralFidelity();
 }
 function renderParticipations(){
   if(!participationList)return;
@@ -586,6 +605,7 @@ function renderParticipations(){
   const total=participations.reduce((sum,r)=>sum+Math.max(0,Number(r.indicacoes)||0),0);
   document.getElementById('participationCount').textContent=String(participations.length);
   document.getElementById('referralCount').textContent=String(total);
+  renderReferralSummary();
   participationList.innerHTML=filtered.map(r=>{
     const nome=pmap.get(String(r.participante_id))||'Participante não encontrado';
     const trilha=tmap.get(String(r.trilha_id))||'Trilha não encontrada';
@@ -593,6 +613,22 @@ function renderParticipations(){
     return '<div class="trail-card"><div><div class="trail-title">'+esc(nome)+'</div><div class="trail-meta"><span class="tag">'+esc(trilha)+'</span><span class="tag">'+esc(data)+'</span><span class="tag">'+Math.max(0,Number(r.indicacoes)||0)+' indicações</span></div>'+(r.observacao?'<div class="trail-desc">'+esc(r.observacao)+'</div>':'')+'</div><div class="trail-actions"><button class="btn" onclick="editParticipation(\''+r.id+'\')">Editar</button></div></div>';
   }).join('')||'<div class="empty">'+(participations.length?'Nenhum registro encontrado para essa busca.':'Nenhuma participação registrada ainda.')+'</div>';
 }
+function renderReferralSummary(){
+  const el=document.getElementById('referralSummaryList');
+  if(!el)return;
+  const q=String(document.getElementById('referralSummarySearch')?.value||'').trim().toLowerCase();
+  const totals=new Map();
+  for(const r of participations){
+    const id=String(r.participante_id);
+    totals.set(id,(totals.get(id)||0)+Math.max(0,Number(r.indicacoes)||0));
+  }
+  const rows=participants.map(p=>({id:String(p.id),nome:p.nome||'Participante',total:totals.get(String(p.id))||0}))
+    .filter(p=>p.nome.toLowerCase().includes(q))
+    .sort((a,b)=>b.total-a.total||a.nome.localeCompare(b.nome,'pt-BR'));
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum participante encontrado.</div>';return;}
+  el.innerHTML=rows.map(p=>'<div class="trail-card"><div><div class="trail-title">'+esc(p.nome)+'</div><div class="trail-meta"><span class="tag">'+p.total+' '+(p.total===1?'indicação acumulada':'indicações acumuladas')+'</span></div></div></div>').join('');
+}
+
 function refreshParticipationSelects(){
   const currentP=partParticipant.value,currentT=partTrail.value;
   partParticipant.innerHTML='<option value="">Selecione o participante</option>'+participants.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nome)+'</option>').join('');
@@ -632,6 +668,55 @@ async function saveParticipation(){
   closeParticipationModal();await loadParticipations();await loadDashboard();
 }
 function editParticipation(id){openParticipationModal(id)}
+
+async function loadReferralBenefits(){
+  await loadParticipations();
+  const list=document.getElementById('referralBenefitList');
+  if(list)list.innerHTML='<div class="empty">Carregando patamares...</div>';
+  const r=await db.from('beneficios_indicacoes').select('id,nome,descricao,quantidade_indicacoes,ativo').order('quantidade_indicacoes',{ascending:true});
+  if(r.error){if(list)list.innerHTML='<div class="empty">Não foi possível carregar os patamares.<br><small>'+esc(r.error.message)+'</small></div>';console.error('Patamares por indicações:',r.error);return;}
+  referralBenefits=r.data||[];renderReferralBenefits();renderReferralFidelity();
+}
+function renderReferralBenefits(){
+  const el=document.getElementById('referralBenefitList');if(!el)return;
+  if(!referralBenefits.length){el.innerHTML='<div class="empty">Nenhum patamar por indicações configurado.</div>';return;}
+  el.innerHTML=[...referralBenefits].sort((a,b)=>Number(a.quantidade_indicacoes)-Number(b.quantidade_indicacoes)).map(b=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(b.nome)+'</div><div class="benefit-meta"><span class="tag">'+Number(b.quantidade_indicacoes)+' indicações</span><span class="tag '+(b.ativo?'status-on':'status-off')+'">'+(b.ativo?'Ativo':'Inativo')+'</span></div><div class="benefit-desc">'+esc(b.descricao||'Sem descrição.')+'</div></div><div class="benefit-actions"><button class="btn" onclick="openReferralBenefitModal(\''+b.id+'\')">Editar</button><button class="btn toggle" onclick="toggleReferralBenefit(\''+b.id+'\','+(!b.ativo)+')">'+(b.ativo?'Desativar':'Ativar')+'</button></div></div>').join('');
+}
+function openReferralBenefitModal(id=null){
+  editingReferralBenefitId=id;
+  const b=id?referralBenefits.find(x=>String(x.id)===String(id)):null;
+  document.getElementById('referralBenefitModalTitle').textContent=b?'Editar patamar de indicações':'Novo patamar de indicações';
+  document.getElementById('rfn').value=b?.nome||'';document.getElementById('rfd').value=b?.descricao||'';document.getElementById('rfq').value=b?.quantidade_indicacoes??'';document.getElementById('rfa').checked=b?.ativo??true;
+  document.getElementById('referralBenefitModal').classList.add('active');
+}
+function closeReferralBenefitModal(){document.getElementById('referralBenefitModal').classList.remove('active');editingReferralBenefitId=null;}
+async function saveReferralBenefit(){
+  const nome=document.getElementById('rfn').value.trim();
+  const quantidade_indicacoes=Number(document.getElementById('rfq').value);
+  const payload={nome,descricao:document.getElementById('rfd').value.trim()||null,quantidade_indicacoes,ativo:document.getElementById('rfa').checked};
+  if(!nome){alert('Informe o nome do benefício.');return;}
+  if(!Number.isInteger(quantidade_indicacoes)||quantidade_indicacoes<1){alert('Informe um patamar inteiro de indicações maior que zero.');return;}
+  const duplicate=referralBenefits.some(b=>Number(b.quantidade_indicacoes)===quantidade_indicacoes&&b.ativo&&String(b.id)!==String(editingReferralBenefitId)&&payload.ativo);
+  if(duplicate){alert('Já existe um patamar ativo para essa quantidade de indicações. Edite o existente ou desative-o.');return;}
+  const r=editingReferralBenefitId?await db.from('beneficios_indicacoes').update(payload).eq('id',editingReferralBenefitId):await db.from('beneficios_indicacoes').insert(payload);
+  if(r.error){alert('Não foi possível salvar o patamar.\n\n'+r.error.message);return;}
+  closeReferralBenefitModal();await loadReferralBenefits();
+}
+async function toggleReferralBenefit(id,ativo){
+  const b=referralBenefits.find(x=>String(x.id)===String(id));if(!b)return;
+  if(ativo&&referralBenefits.some(x=>Number(x.quantidade_indicacoes)===Number(b.quantidade_indicacoes)&&x.ativo&&String(x.id)!==String(id))){alert('Já existe um patamar ativo para essa quantidade de indicações.');return;}
+  const r=await db.from('beneficios_indicacoes').update({ativo}).eq('id',id);
+  if(r.error){alert('Não foi possível alterar o patamar.\n\n'+r.error.message);return;}
+  await loadReferralBenefits();
+}
+function renderReferralFidelity(){
+  const el=document.getElementById('referralFidelityList');if(!el)return;
+  if(!participants.length||!participations.length&& !referralBenefits.length){el.innerHTML='<div class="empty">Ainda não há dados suficientes para calcular o progresso.</div>';return;}
+  const totals=new Map();
+  for(const r of participations){const id=String(r.participante_id);totals.set(id,(totals.get(id)||0)+Math.max(0,Number(r.indicacoes)||0));}
+  const active=referralBenefits.filter(b=>b.ativo).sort((a,b)=>Number(a.quantidade_indicacoes)-Number(b.quantidade_indicacoes));
+  el.innerHTML=[...participants].map(p=>{const total=totals.get(String(p.id))||0;const reached=active.filter(b=>total>=Number(b.quantidade_indicacoes));const next=active.find(b=>total<Number(b.quantidade_indicacoes));const status=reached.length?reached.map(b=>'<span class="tag status-on">'+esc(b.nome)+' ('+Number(b.quantidade_indicacoes)+')</span>').join(' '):'<span class="tag">Nenhum patamar alcançado</span>';const nextText=next?'<div class="benefit-desc">Próximo: '+esc(next.nome)+' em '+Number(next.quantidade_indicacoes)+' indicações. Faltam '+(Number(next.quantidade_indicacoes)-total)+'.</div>':'<div class="benefit-desc">Todos os patamares ativos foram alcançados.</div>';return '<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(p.nome||'Participante')+'</div><div class="benefit-meta"><span class="tag">'+total+' indicações acumuladas</span></div><div class="benefit-desc">Patamares alcançados: '+status+'</div>'+nextText+'</div></div>';}).join('')||'<div class="empty">Nenhum participante cadastrado.</div>';
+}
 
 function fidelityDate(value){
   if(!value)return 'Data não informada';
