@@ -138,6 +138,13 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
  .summary-name{font-size:17px}
  .summary-total{font-size:10px}
 }
+
+/* Fidelidade: hierarquia objetiva e filtros antes dos resultados filtrados */
+.fidelity-page .fidelity-block-heading p{margin-top:4px}
+.fidelity-page .fidelity-filters{margin:16px 0}
+.fidelity-page .referral-fidelity-block #referralFidelityList{margin-top:14px}
+.fidelity-page .benefit-list{min-width:0}
+
 </style>
 </head>
 <body>
@@ -249,37 +256,40 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
       <div>
         <div class="section-kicker">PASSAPORTE RECONEC.TOUR</div>
         <h2>Fidelidade</h2>
-        <div class="sub">Acompanhe o progresso individual e consulte os benefícios conquistados ou utilizados.</div>
+        <div class="sub">Acompanhe indicações e benefícios conquistados.</div>
       </div>
-      <button class="btn" onclick="refreshFidelity()">Atualizar tudo</button>
+      <button class="btn" onclick="refreshFidelity()">Atualizar</button>
     </div>
   </div>
 
   <section class="panel fidelity-block referral-fidelity-block">
     <div class="fidelity-block-heading">
       <div class="fidelity-icon">01</div>
-      <div><h2>Fidelidade por indicações</h2><p>As indicações são somadas por participante em todas as trilhas. Os patamares são independentes da quantidade de trilhas realizadas.</p></div>
+      <div><h2>Progresso por indicações</h2><p>Total de indicações acumuladas por participante.</p></div>
     </div>
-    <div class="fidelity-block-heading" style="margin-top:24px">
-      <div class="fidelity-icon">03</div>
-      <div><h2>Benefícios por indicações conquistados</h2><p>Os patamares atingidos são registrados uma única vez. O administrador pode marcar cada benefício como utilizado e consultar a data.</p></div>
+    <div id="referralFidelityList" class="benefit-list"><div class="empty">Carregando progresso por indicações...</div></div>
+  </section>
+
+  <section class="panel fidelity-block referral-rewards-block">
+    <div class="fidelity-block-heading">
+      <div class="fidelity-icon">02</div>
+      <div><h2>Benefícios por indicações</h2><p>Filtre para consultar benefícios disponíveis ou utilizados.</p></div>
     </div>
     <div class="fidelity-filters">
       <div class="field"><label for="referralParticipantFilter">Participante</label><select id="referralParticipantFilter" onchange="renderReferralRewards()"><option value="todos">Todos os participantes</option></select></div>
-      <div class="field"><label for="referralStatusFilter">Situação</label><select id="referralStatusFilter" onchange="renderReferralRewards()"><option value="todos">Todos os benefícios</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
+      <div class="field"><label for="referralStatusFilter">Situação</label><select id="referralStatusFilter" onchange="renderReferralRewards()"><option value="todos">Todas as situações</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
     </div>
-    <div id="referralFidelityList" class="benefit-list"><div class="empty">Carregando progresso por indicações...</div></div>
-    <div id="referralRewardsList" class="benefit-list"><div class="empty">Carregando benefícios conquistados por indicações...</div></div>
+    <div id="referralRewardsList" class="benefit-list"><div class="empty">Carregando benefícios por indicações...</div></div>
   </section>
 
   <section class="panel fidelity-block trail-fidelity-block">
     <div class="fidelity-block-heading">
-      <div class="fidelity-icon">02</div>
-      <div><h2>Fidelidade por trilhas</h2><p>Conquistas vinculadas às regras de quantidade de trilhas registradas no Passaporte.</p></div>
+      <div class="fidelity-icon">03</div>
+      <div><h2>Fidelidade por trilhas</h2><p>Benefícios vinculados à quantidade de trilhas realizadas.</p></div>
     </div>
     <div class="fidelity-filters">
       <div class="field"><label for="trailParticipantFilter">Participante</label><select id="trailParticipantFilter" onchange="renderTrailRewards()"><option value="todos">Todos os participantes</option></select></div>
-      <div class="field"><label for="trailStatusFilter">Situação</label><select id="trailStatusFilter" onchange="renderTrailRewards()"><option value="todos">Todos os benefícios</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
+      <div class="field"><label for="trailStatusFilter">Situação</label><select id="trailStatusFilter" onchange="renderTrailRewards()"><option value="todos">Todas as situações</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
     </div>
     <div id="fidelityList" class="benefit-list"><div class="empty">Carregando benefícios por trilhas...</div></div>
   </section>
