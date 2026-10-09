@@ -70,6 +70,44 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 .trail-list{display:grid;gap:10px}.trail-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:15px;border:1px solid var(--line);border-radius:8px;background:rgba(23,56,43,.42)}.trail-title{font:400 19px Georgia;color:var(--cream)}.trail-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}.trail-meta .tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);padding:5px 7px;border-radius:20px}.trail-desc{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.45}.trail-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.trail-actions .btn{min-width:90px}.trail-status-on{color:#9fd6a8}.trail-status-off{color:#d9a7a0}
 .benefit-list{display:grid;gap:10px}.benefit-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:15px;border:1px solid var(--line);border-radius:8px;background:rgba(23,56,43,.42)}.benefit-main{min-width:0}.benefit-title{font:400 19px Georgia;color:var(--cream)}.benefit-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:7px}.tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);border:1px solid var(--line);padding:5px 7px;border-radius:20px}.benefit-desc{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.45}.benefit-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.status-on{color:#9fd6a8}.status-off{color:#d9a7a0}.toggle{font-size:11px}.modal-box h2{margin:0 0 18px;font:400 25px Georgia}.field select,.field textarea{padding:12px;background:#0d2b21;border:1px solid var(--line);border-radius:6px;color:var(--cream);outline:0;font-size:16px;line-height:1.45}.field textarea{min-height:90px;resize:vertical}.field input[type=checkbox]{width:20px;height:20px;accent-color:var(--gold)}.check-row{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px;padding-top:5px}
 @media(max-width:800px){.trail-card{grid-template-columns:1fr}.trail-actions{justify-content:flex-start}.trail-actions .btn{flex:1;min-width:110px}.benefit-card{grid-template-columns:1fr}.benefit-actions{justify-content:flex-start}.benefit-actions .btn{flex:1;min-width:105px}.top-site-link{padding:9px 11px;font-size:12px}.top-site-link .site-label{display:none}}
+
+/* Organização da página Participações */
+.participation-page{padding:clamp(16px,3vw,28px)}
+.participation-page-head{align-items:flex-start;gap:18px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.section-kicker{font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:8px}
+.participation-page-head h2{font-size:clamp(26px,3vw,34px)}
+.participation-page-head .sub{max-width:600px;line-height:1.55}
+.participation-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0 26px}
+.stat-box{padding:18px;border:1px solid var(--line);border-radius:9px;background:rgba(7,31,23,.38);min-width:0}
+.stat-box .value{font-size:clamp(29px,4vw,38px)}
+.stat-help{font-size:12px;color:var(--muted);line-height:1.4;margin-top:6px}
+.participation-block{padding:20px 0 24px;border-top:1px solid var(--line);margin-top:6px}
+.block-heading{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.block-number{display:grid;place-items:center;flex:0 0 34px;height:34px;border:1px solid var(--line);border-radius:50%;color:var(--gold);font:14px Georgia}
+.block-heading h3{font-size:19px;margin:2px 0 6px;color:var(--cream)}
+.block-heading p{font-size:13px;line-height:1.5;color:var(--muted);margin:0;max-width:650px}
+.summary-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.summary-card{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:14px 15px;border:1px solid var(--line);border-radius:8px;background:rgba(23,56,43,.36)}
+.summary-name{font:400 18px Georgia;overflow-wrap:anywhere}
+.summary-total{flex-shrink:0;text-align:center;padding:7px 10px;border-radius:20px;background:rgba(217,173,69,.09);border:1px solid var(--line);color:var(--gold);font-size:11px;letter-spacing:.7px;text-transform:uppercase}
+.participation-history-block .trail-list{margin-top:2px}
+@media(max-width:800px){
+ .participation-page{padding:16px 13px}
+ .participation-page-head{display:grid;grid-template-columns:1fr;align-items:stretch}
+ .participation-page-head>.btn{width:100%;min-height:46px}
+ .participation-stats{gap:9px;margin:16px 0 20px}
+ .stat-box{padding:13px 11px}
+ .stat-box .label{font-size:9px;letter-spacing:1px;line-height:1.4}
+ .stat-box .value{font-size:28px}
+ .stat-help{font-size:11px}
+ .participation-block{padding:18px 0 20px}
+ .block-heading h3{font-size:18px}
+ .block-heading p{font-size:12px}
+ .summary-list{grid-template-columns:1fr}
+ .summary-card{padding:13px 12px}
+ .summary-name{font-size:17px}
+ .summary-total{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -142,13 +180,30 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div id="trailList" class="trail-list"></div>
 </div></section>
 <section id="participacoes" class="section">
-<div class="panel">
-<div class="panel-head"><div><h2>Participações e indicações</h2><div class="sub" style="margin-top:5px">Registre a presença e a quantidade de indicações atribuídas a cada participante nesta trilha.</div></div><button class="btn primary" onclick="openParticipationModal()">+ Registrar</button></div>
-<div class="cards" style="margin:14px 0"><div class="card"><div class="label">Registros</div><div class="value" id="participationCount">0</div><div class="note">participações cadastradas</div></div><div class="card"><div class="label">Indicações</div><div class="value" id="referralCount">0</div><div class="note">total registrado</div></div></div>
-<div class="panel" style="margin:14px 0"><div class="panel-head"><div><h3 style="margin:0">Acumulado individual de indicações</h3><div class="sub" style="margin-top:5px">Soma automática das indicações registradas em todas as trilhas de cada participante.</div></div></div><input id="referralSummarySearch" class="search" placeholder="Buscar participante no acumulado..." oninput="renderReferralSummary()"><div id="referralSummaryList" class="trail-list"><div class="empty">Carregando acumulados...</div></div></div>
-<input id="participationSearch" class="search" placeholder="Buscar participante ou trilha..." oninput="renderParticipations()">
-<div id="participationList" class="trail-list"><div class="empty">Carregando participações...</div></div>
-</div></section>
+  <div class="panel participation-page">
+    <div class="panel-head participation-page-head">
+      <div><div class="section-kicker">GESTÃO DE PRESENÇAS</div><h2>Participações</h2><div class="sub" style="margin-top:6px">Registre quem participou de cada trilha e quantas indicações foram atribuídas nessa ocasião.</div></div>
+      <button class="btn primary" onclick="openParticipationModal()">+ Registrar participação</button>
+    </div>
+
+    <div class="participation-stats">
+      <div class="stat-box"><div class="label">Participações registradas</div><div class="value" id="participationCount">0</div><div class="stat-help">Registros de presença</div></div>
+      <div class="stat-box"><div class="label">Indicações registradas</div><div class="value" id="referralCount">0</div><div class="stat-help">Soma geral de todas as participações</div></div>
+    </div>
+
+    <section class="participation-block referral-summary-block">
+      <div class="block-heading"><span class="block-number">01</span><div><h3>Acumulado por participante</h3><p>Indicações somadas automaticamente entre todas as trilhas. Este total individual é usado para calcular os benefícios por indicações.</p></div></div>
+      <input id="referralSummarySearch" class="search" placeholder="Buscar participante pelo nome..." oninput="renderReferralSummary()">
+      <div id="referralSummaryList" class="summary-list"><div class="empty">Carregando acumulados...</div></div>
+    </section>
+
+    <section class="participation-block participation-history-block">
+      <div class="block-heading"><span class="block-number">02</span><div><h3>Histórico de participações</h3><p>Cada registro representa uma pessoa em uma trilha, com data e quantidade de indicações atribuídas naquela ocasião.</p></div></div>
+      <input id="participationSearch" class="search" placeholder="Buscar por participante ou trilha..." oninput="renderParticipations()">
+      <div id="participationList" class="trail-list"><div class="empty">Carregando participações...</div></div>
+    </section>
+  </div>
+</section>
 <section id="beneficios" class="section">
 <div class="panel">
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
@@ -626,7 +681,7 @@ function renderReferralSummary(){
     .filter(p=>p.nome.toLowerCase().includes(q))
     .sort((a,b)=>b.total-a.total||a.nome.localeCompare(b.nome,'pt-BR'));
   if(!rows.length){el.innerHTML='<div class="empty">Nenhum participante encontrado.</div>';return;}
-  el.innerHTML=rows.map(p=>'<div class="trail-card"><div><div class="trail-title">'+esc(p.nome)+'</div><div class="trail-meta"><span class="tag">'+p.total+' '+(p.total===1?'indicação acumulada':'indicações acumuladas')+'</span></div></div></div>').join('');
+  el.innerHTML=rows.map(p=>'<div class="summary-card"><div class="summary-name">'+esc(p.nome)+'</div><div class="summary-total">'+p.total+' '+(p.total===1?'indicação':'indicações')+'</div></div>').join('');
 }
 
 function refreshParticipationSelects(){
