@@ -62,8 +62,8 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 .sidebar{display:none}main{margin:0;padding:25px 15px 82px}.cards{grid-template-columns:1fr 1fr}.card{padding:15px}.value{font-size:29px}
 .desktop-table{display:none}.mob-card{display:block;border:1px solid var(--line);border-radius:8px;padding:13px;margin:8px 0;background:rgba(23,56,43,.42)}
 .mob-card strong{font:400 17px Georgia}.mob-card small{display:block;color:var(--muted);margin-top:6px}
-.mobile-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:40;bottom:0;left:0;right:0;background:#0b261d;border-top:1px solid var(--line)}
-.mobile-nav button{border:0;background:transparent;color:#9daaa3;padding:9px 3px;font-size:9px}.mobile-nav button.active{color:var(--gold)}
+.mobile-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;z-index:40;bottom:0;left:0;right:0;background:#0b261d;border-top:1px solid var(--line)}
+.mobile-nav button{border:0;background:transparent;color:#9daaa3;padding:9px 1px;font-size:8px;min-width:0}.mobile-nav button.active{color:var(--gold)}
 .mobile-nav span{display:block;font-size:18px;margin-bottom:3px}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.top-logo{width:60px;height:60px;border:0;outline:0;box-shadow:none;background:transparent}.top{gap:11px}.top-site-link{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border:1px solid var(--line);border-radius:7px;background:rgba(217,173,69,.08);color:var(--cream);text-decoration:none;font-size:13px;white-space:nowrap}.top-site-link:hover{border-color:var(--gold);color:var(--gold);background:rgba(217,173,69,.12)}
 }
 
@@ -141,19 +141,25 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <input id="trailSearch" class="search" placeholder="Buscar por nome ou local..." oninput="renderTrails()">
 <div id="trailList" class="trail-list"></div>
 </div></section>
-<section id="participacoes" class="section"><div class="panel"><h2>Participações</h2><div class="empty">Módulo preparado para registrar participante, trilha, data e observação. O gatilho de fidelidade já está no banco.</div></div></section>
+<section id="participacoes" class="section">
+<div class="panel">
+<div class="panel-head"><div><h2>Participações</h2><div class="sub" style="margin-top:5px">Registre a presença real dos participantes. Cada registro alimenta o histórico e o gatilho de fidelidade do banco.</div></div><button class="btn primary" onclick="openParticipationModal()">+ Registrar participação</button></div>
+<input id="participationSearch" class="search" placeholder="Buscar participante ou trilha..." oninput="renderParticipations()">
+<div id="participationList" class="trail-list"></div>
+</div></section>
 <section id="beneficios" class="section">
 <div class="panel">
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
 <div id="benefitList" class="benefit-list"></div>
 </div></section>
-<section id="fidelidade" class="section"><div class="panel"><h2>Fidelidade</h2><div class="empty">Módulo preparado para mostrar o ciclo 1 → 8, conquistas, utilização e histórico.</div></div></section>
+<section id="fidelidade" class="section"><div class="panel"><div class="panel-head"><div><h2>Fidelidade</h2><div class="sub" style="margin-top:5px">Conquistas registradas pelo banco a partir das participações.</div></div><button class="btn" onclick="loadFidelity()">Atualizar</button></div><div id="fidelityList" class="benefit-list"><div class="empty">Carregue para consultar as conquistas reais.</div></div></div></section>
 </main></div>
 
 <nav class="mobile-nav">
 <button class="active" data-section="dashboard"><span>⌂</span>Início</button>
 <button data-section="participantes"><span>♙</span>Participantes</button>
 <button data-section="trilhas"><span>⌁</span>Trilhas</button>
+<button data-section="participacoes"><span>✓</span>Presenças</button>
 <button data-section="beneficios"><span>◆</span>Benefícios</button>
 <button data-section="fidelidade"><span>◇</span>Fidelidade</button>
 </nav>
@@ -192,7 +198,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="field full"><label>Local</label><input id="tl" placeholder="Local / região"></div>
 <div class="field"><label>Dificuldade</label><select id="td"><option value="">Selecione</option><option value="Fácil">Fácil</option><option value="Moderada leve">Moderada leve</option><option value="Moderada superior">Moderada superior</option><option value="Difícil">Difícil</option></select></div>
 <div class="field"><label>Distância (km)</label><input id="tq" type="number" min="0" step="0.1" placeholder="Ex.: 4,5"></div>
-<div class="field"><label>Duração (minutos)</label><input id="tm" type="number" min="1" step="1" placeholder="Ex.: 150"></div>
+<div class="field"><label>Duração (horas)</label><input id="tm" type="number" min="0.25" step="0.25" placeholder="Ex.: 2,5"><small style="color:var(--muted);font-size:11px">Informe em horas. Ex.: 2,5 = 2h30.</small></div>
 <div class="field"><label>Status</label><select id="ta"><option value="true">Ativa</option><option value="false">Inativa</option></select></div>
 <div class="field full"><label>Descrição</label><textarea id="tx" placeholder="Descrição da trilha, percurso ou informações relevantes."></textarea></div>
 </div>
@@ -208,6 +214,17 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="field full"><label>Status</label><div class="check-row"><input id="ba" type="checkbox" checked><span>Benefício ativo e disponível para novas conquistas</span></div></div>
 </div>
 <div class="modal-actions"><button class="btn" onclick="closeBenefitModal()">Cancelar</button><button class="btn primary" onclick="saveBenefit()">Salvar benefício</button></div>
+</div></div>
+
+<div class="modal" id="participationModal"><div class="modal-box"><h2>Registrar participação</h2>
+<div class="form-grid">
+<div class="field full"><label>Participante</label><select id="participationPerson" required><option value="">Selecione o participante</option></select></div>
+<div class="field full"><label>Trilha</label><select id="participationTrail" required><option value="">Selecione a trilha</option></select></div>
+<div class="field"><label>Data da participação</label><input id="participationDate" type="date" required></div>
+<div class="field full"><label>Observação (opcional)</label><textarea id="participationNote" placeholder="Informações relevantes sobre a participação."></textarea></div>
+</div>
+<div class="modal-actions"><button class="btn" onclick="closeParticipationModal()">Cancelar</button><button id="participationSaveBtn" class="btn primary" onclick="saveParticipation()">Salvar participação</button></div>
+<p class="note">Registre somente participações realizadas. O histórico não será apagado ao reiniciar o ciclo de fidelidade.</p>
 </div></div>
 
 <script>
@@ -262,6 +279,16 @@ const trailList=document.getElementById('trailList');
 const trailSearch=document.getElementById('trailSearch');
 const trailSaveBtn=document.getElementById('trailSaveBtn');
 let trails=[],editingTrailId=null;
+const participationModal=document.getElementById('participationModal');
+const participationPerson=document.getElementById('participationPerson');
+const participationTrail=document.getElementById('participationTrail');
+const participationDate=document.getElementById('participationDate');
+const participationNote=document.getElementById('participationNote');
+const participationSaveBtn=document.getElementById('participationSaveBtn');
+const participationList=document.getElementById('participationList');
+const participationSearch=document.getElementById('participationSearch');
+const fidelityList=document.getElementById('fidelityList');
+let participations=[],fidelityRows=[];
 const benefitModal=document.getElementById('benefitModal');
 const benefitModalTitle=document.getElementById('benefitModalTitle');
 const bn=document.getElementById('bn');
@@ -278,7 +305,7 @@ function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='beneficios')loadBenefits();
+if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios')loadBenefits();if(id==='fidelidade')loadFidelity();
 }
 async function entrar(){
 msg.textContent='Entrando...';
@@ -500,7 +527,7 @@ function openTrailModal(id=null){
   if(id){
     const t=trails.find(x=>x.id===id);
     if(!t)return;
-    tn.value=t.nome||'';tl.value=t.local||'';td.value=t.dificuldade||'';tq.value=t.distancia_km??'';tm.value=t.duracao_minutos??'';ta.value=String(t.ativa!==false);tx.value=t.descricao||'';
+    tn.value=t.nome||'';tl.value=t.local||'';td.value=t.dificuldade||'';tq.value=t.distancia_km??'';tm.value=t.duracao_minutos==null?'':String(Number(t.duracao_minutos)/60);ta.value=String(t.ativa!==false);tx.value=t.descricao||'';
   }
   trailModal.classList.add('active');
 }
@@ -509,9 +536,10 @@ async function saveTrail(){
   const nome=tn.value.trim();
   if(!nome){alert('Informe o nome da trilha.');return;}
   const distancia=tq.value===''?null:Number(String(tq.value).replace(',','.'));
-  const duracao=tm.value===''?null:parseInt(tm.value,10);
+  const horas=tm.value===''?null:Number(String(tm.value).replace(',','.'));
+  const duracao=horas===null?null:Math.round(horas*60);
   if(distancia!==null&&(!Number.isFinite(distancia)||distancia<0)){alert('Informe uma distância válida.');return;}
-  if(duracao!==null&&(!Number.isInteger(duracao)||duracao<1)){alert('Informe uma duração válida em minutos.');return;}
+  if(horas!==null&&(!Number.isFinite(horas)||horas<=0||duracao<1)){alert('Informe uma duração válida em horas. Ex.: 2,5 para 2h30.');return;}
   const payload={nome,local:tl.value.trim()||null,dificuldade:td.value||null,distancia_km:distancia,duracao_minutos:duracao,descricao:tx.value.trim()||null,ativa:ta.value==='true'};
   trailSaveBtn.disabled=true; trailSaveBtn.textContent='Salvando...';
   let r;
@@ -526,6 +554,72 @@ async function toggleTrail(id,ativa){
   if(r.error){alert('Não foi possível alterar o status da trilha.\n\n'+r.error.message);return;}
   await loadTrails(); await loadDashboard();
 }
+function localISODate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function formatDate(value){if(!value)return 'Data não informada';const parts=String(value).slice(0,10).split('-');return parts.length===3?`${parts[2]}/${parts[1]}/${parts[0]}`:String(value)}
+async function loadParticipations(){
+  if(!participationList)return;
+  participationList.innerHTML='<div class="empty">Carregando participações...</div>';
+  const [pr,tr,rr]=await Promise.all([
+    db.from('participantes').select('id,nome').order('nome',{ascending:true}),
+    db.from('trilhas').select('id,nome,local,ativa').order('nome',{ascending:true}),
+    db.from('participacoes').select('id,participante_id,trilha_id,data_participacao,observacao,criado_em').order('data_participacao',{ascending:false}).order('criado_em',{ascending:false})
+  ]);
+  const errors=[pr.error&&('Participantes: '+pr.error.message),tr.error&&('Trilhas: '+tr.error.message),rr.error&&('Participações: '+rr.error.message)].filter(Boolean);
+  if(errors.length){participations=[];renderParticipations();participationList.innerHTML='<div class="empty">Não foi possível carregar o módulo.<br><small>'+esc(errors.join(' | '))+'</small></div>';console.error('Participações:',errors);return;}
+  participants=Array.isArray(pr.data)?pr.data:participants;
+  trails=Array.isArray(tr.data)?tr.data:trails;
+  const peopleById=new Map(participants.map(x=>[String(x.id),x]));
+  const trailsById=new Map(trails.map(x=>[String(x.id),x]));
+  participations=(rr.data||[]).map(x=>({...x,participante_nome:peopleById.get(String(x.participante_id))?.nome||'Participante não encontrado',trilha_nome:trailsById.get(String(x.trilha_id))?.nome||'Trilha não encontrada',trilha_local:trailsById.get(String(x.trilha_id))?.local||''}));
+  renderParticipations();
+}
+function renderParticipations(){
+  if(!participationList)return;
+  const q=String(participationSearch?.value||'').trim().toLowerCase();
+  const arr=participations.filter(x=>`${x.participante_nome} ${x.trilha_nome} ${x.trilha_local} ${x.observacao||''}`.toLowerCase().includes(q));
+  participationList.innerHTML=arr.map(x=>`<div class="trail-card"><div><div class="trail-title">${esc(x.participante_nome)}</div><div class="trail-meta"><span class="tag">${esc(x.trilha_nome)}</span><span class="tag">${formatDate(x.data_participacao)}</span>${x.trilha_local?`<span class="tag">${esc(x.trilha_local)}</span>`:''}</div>${x.observacao?`<div class="trail-desc">${esc(x.observacao)}</div>`:''}</div><div class="trail-actions"><span class="tag">Registrada</span></div></div>`).join('')||'<div class="empty">Nenhuma participação encontrada.</div>';
+}
+async function openParticipationModal(){
+  const [pr,tr]=await Promise.all([
+    db.from('participantes').select('id,nome').order('nome',{ascending:true}),
+    db.from('trilhas').select('id,nome,local,ativa').eq('ativa',true).order('nome',{ascending:true})
+  ]);
+  if(pr.error||tr.error){alert('Não foi possível preparar o registro. '+[pr.error?.message,tr.error?.message].filter(Boolean).join(' | '));return;}
+  const people=pr.data||[],activeTrails=tr.data||[];
+  if(!people.length){alert('Ainda não há participantes cadastrados. Cadastre um participante antes de registrar a presença.');return;}
+  if(!activeTrails.length){alert('Não há trilhas ativas. Ative ou cadastre uma trilha antes de registrar a presença.');return;}
+  participationPerson.innerHTML='<option value="">Selecione o participante</option>'+people.map(p=>`<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('');
+  participationTrail.innerHTML='<option value="">Selecione a trilha</option>'+activeTrails.map(t=>`<option value="${esc(t.id)}">${esc(t.nome)}${t.local?' · '+esc(t.local):''}</option>`).join('');
+  participationDate.value=localISODate();participationNote.value='';participationSaveBtn.disabled=false;participationSaveBtn.textContent='Salvar participação';
+  participationModal.classList.add('active');
+}
+function closeParticipationModal(){participationModal.classList.remove('active')}
+async function saveParticipation(){
+  const participante_id=participationPerson.value,trilha_id=participationTrail.value,data_participacao=participationDate.value,observacao=participationNote.value.trim()||null;
+  if(!participante_id||!trilha_id||!data_participacao){alert('Selecione participante, trilha e data.');return;}
+  participationSaveBtn.disabled=true;participationSaveBtn.textContent='Salvando...';
+  const r=await db.from('participacoes').insert({participante_id,trilha_id,data_participacao,observacao}).select('id').single();
+  if(r.error){participationSaveBtn.disabled=false;participationSaveBtn.textContent='Salvar participação';alert('Não foi possível registrar a participação.\n\n'+r.error.message);return;}
+  closeParticipationModal();await loadParticipations();await loadDashboard();
+  alert('Participação registrada. O banco processará a regra de fidelidade automaticamente, conforme o gatilho configurado.');
+}
+async function loadFidelity(){
+  if(!fidelityList)return;
+  fidelityList.innerHTML='<div class="empty">Carregando conquistas...</div>';
+  const [cr,pr,br]=await Promise.all([
+    db.from('beneficios_conquistados').select('id,participante_id,beneficio_id,conquistado_em,utilizado,utilizado_em').order('conquistado_em',{ascending:false}),
+    db.from('participantes').select('id,nome').order('nome',{ascending:true}),
+    db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true})
+  ]);
+  const errors=[cr.error&&('Conquistas: '+cr.error.message),pr.error&&('Participantes: '+pr.error.message),br.error&&('Benefícios: '+br.error.message)].filter(Boolean);
+  if(errors.length){fidelityList.innerHTML='<div class="empty">Não foi possível carregar a fidelidade.<br><small>'+esc(errors.join(' | '))+'</small></div>';console.error('Fidelidade:',errors);return;}
+  const people=new Map((pr.data||[]).map(x=>[String(x.id),x.nome]));
+  const benefitsById=new Map((br.data||[]).map(x=>[String(x.id),x]));
+  fidelityRows=(cr.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:benefitsById.get(String(x.beneficio_id))||null}));
+  if(!fidelityRows.length){fidelityList.innerHTML='<div class="empty">Ainda não há benefícios conquistados. Registre participações reais para que o gatilho de fidelidade possa processar as regras.</div>';return;}
+  fidelityList.innerHTML=fidelityRows.map(x=>`<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">${esc(x.participante_nome)}</div><div class="benefit-meta"><span class="tag">${esc(x.beneficio?.nome||'Benefício removido')}</span><span class="tag">Conquistado em ${formatDate(x.conquistado_em)}</span><span class="tag ${x.utilizado?'status-off':'status-on'}">${x.utilizado?'Utilizado':'Disponível'}</span></div>${x.beneficio?.descricao?`<div class="benefit-desc">${esc(x.beneficio.descricao)}</div>`:''}${x.utilizado_em?`<div class="benefit-desc">Utilizado em: ${formatDate(x.utilizado_em)}</div>`:''}</div></div>`).join('');
+}
+
 async function loadBenefits(){
 const r=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true});
 if(r.error){console.error(r.error);alert('Não foi possível carregar os benefícios: '+r.error.message);return}
