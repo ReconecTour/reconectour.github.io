@@ -260,6 +260,11 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
       <div><h2>Fidelidade por indicações</h2><p>As indicações são somadas por participante em todas as trilhas. Os patamares são independentes da quantidade de trilhas realizadas.</p></div>
     </div>
     <div id="referralFidelityList" class="benefit-list"><div class="empty">Carregando progresso por indicações...</div></div>
+    <div class="fidelity-block-heading" style="margin-top:24px">
+      <div class="fidelity-icon">03</div>
+      <div><h2>Benefícios por indicações conquistados</h2><p>Os patamares atingidos são registrados uma única vez. O administrador pode marcar cada benefício como utilizado e consultar a data.</p></div>
+    </div>
+    <div id="referralRewardsList" class="benefit-list"><div class="empty">Carregando benefícios conquistados por indicações...</div></div>
   </section>
 
   <section class="panel fidelity-block trail-fidelity-block">
@@ -833,25 +838,68 @@ async function refreshFidelity(){await Promise.all([loadFidelity(),loadReferralB
 async function loadFidelity(){
   if(!fidelityList)return;
   fidelityList.innerHTML='<div class="empty">Carregando conquistas...</div>';
-  const [cr,pr,br]=await Promise.all([
+  const referralRewardsList=document.getElementById('referralRewardsList');
+  if(referralRewardsList)referralRewardsList.innerHTML='<div class="empty">Atualizando conquistas por indicações...</div>';
+  const [cr,pr,br,rr,ir]=await Promise.all([
     db.from('beneficios_conquistados').select('id,participante_id,beneficio_id,conquistado_em,utilizado,utilizado_em').order('conquistado_em',{ascending:false}),
     db.from('participantes').select('id,nome').order('nome',{ascending:true}),
-    db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true})
+    db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true}),
+    db.from('beneficios_indicacoes').select('id,nome,descricao,quantidade_indicacoes,ativo').eq('ativo',true).order('quantidade_indicacoes',{ascending:true}),
+    db.from('participacoes').select('participante_id,indicacoes')
   ]);
-  const errors=[cr.error&&('Conquistas: '+cr.error.message),pr.error&&('Participantes: '+pr.error.message),br.error&&('Benefícios: '+br.error.message)].filter(Boolean);
+  const errors=[cr.error&&('Conquistas por trilhas: '+cr.error.message),pr.error&&('Participantes: '+pr.error.message),br.error&&('Benefícios por trilhas: '+br.error.message),rr.error&&('Patamares por indicações: '+rr.error.message),ir.error&&('Indicações registradas: '+ir.error.message)].filter(Boolean);
   if(errors.length){
     fidelityList.innerHTML='<div class="empty">Não foi possível carregar a fidelidade.<br><small>'+esc(errors.join(' | '))+'</small></div>';
-    console.error('Fidelidade:',errors);
-    return;
+    if(referralRewardsList)referralRewardsList.innerHTML='<div class="empty">Não foi possível carregar os benefícios por indicações. Confira se o SQL da tabela de conquistas foi executado.<br><small>'+esc(errors.join(' | '))+'</small></div>';
+    console.error('Fidelidade:',errors);return;
   }
   const people=new Map((pr.data||[]).map(x=>[String(x.id),x.nome]));
   const benefitsById=new Map((br.data||[]).map(x=>[String(x.id),x]));
   fidelityRows=(cr.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:benefitsById.get(String(x.beneficio_id))||null}));
   if(!fidelityRows.length){
-    fidelityList.innerHTML='<div class="empty">Ainda não há benefícios conquistados. Registre participações reais para que o gatilho de fidelidade do banco possa processar as regras.</div>';
-    return;
+    fidelityList.innerHTML='<div class="empty">Ainda não há benefícios conquistados por trilhas. As regras existentes continuam independentes das indicações.</div>';
+  } else {
+    fidelityList.innerHTML=fidelityRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Benefício removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div></div>').join('');
   }
-  fidelityList.innerHTML=fidelityRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Benefício removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div></div>').join('');
+
+  const activeReferralBenefits=rr.data||[];
+  const totals=new Map();
+  for(const row of (ir.data||[])){
+    const id=String(row.participante_id);
+    totals.set(id,(totals.get(id)||0)+Math.max(0,Number(row.indicacoes)||0));
+  }
+  const desired=[];
+  for(const person of (pr.data||[])){
+    const total=totals.get(String(person.id))||0;
+    for(const benefit of activeReferralBenefits){
+      if(total>=Number(benefit.quantidade_indicacoes)) desired.push({participante_id:person.id,beneficio_indicacao_id:benefit.id});
+    }
+  }
+  if(desired.length){
+    const up=await db.from('beneficios_indicacoes_conquistados').upsert(desired,{onConflict:'participante_id,beneficio_indicacao_id',ignoreDuplicates:true});
+    if(up.error){
+      if(referralRewardsList)referralRewardsList.innerHTML='<div class="empty">Não foi possível registrar as conquistas por indicações.<br><small>'+esc(up.error.message)+'</small><br><small>Confira se o SQL de criação da tabela e das permissões foi executado no Supabase.</small></div>';
+      console.error('Registro de conquistas por indicações:',up.error);return;
+    }
+  }
+  const earned=await db.from('beneficios_indicacoes_conquistados').select('id,participante_id,beneficio_indicacao_id,conquistado_em,utilizado,utilizado_em').order('conquistado_em',{ascending:false});
+  if(earned.error){
+    if(referralRewardsList)referralRewardsList.innerHTML='<div class="empty">Não foi possível carregar os benefícios conquistados por indicações.<br><small>'+esc(earned.error.message)+'</small><br><small>Confira se o SQL de criação da tabela e das permissões foi executado no Supabase.</small></div>';
+    console.error('Leitura de conquistas por indicações:',earned.error);return;
+  }
+  const referralById=new Map(activeReferralBenefits.map(x=>[String(x.id),x]));
+  const earnedRows=(earned.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:referralById.get(String(x.beneficio_indicacao_id))||null}));
+  if(referralRewardsList){
+    if(!earnedRows.length){referralRewardsList.innerHTML='<div class="empty">Nenhum benefício por indicações conquistado até o momento.</div>';}
+    else referralRewardsList.innerHTML=earnedRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Patamar desativado ou removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div><div class="benefit-actions"><button class="btn" onclick="toggleReferralReward(\''+x.id+'\','+(!x.utilizado)+')">'+(x.utilizado?'Desfazer utilização':'Marcar como utilizado')+'</button></div></div>').join('');
+  }
+}
+
+async function toggleReferralReward(id,utilizado){
+  const payload={utilizado,utilizado_em:utilizado?new Date().toISOString():null};
+  const r=await db.from('beneficios_indicacoes_conquistados').update(payload).eq('id',id);
+  if(r.error){alert('Não foi possível atualizar o benefício.\n\n'+r.error.message);return;}
+  await loadFidelity();
 }
 
 async function loadBenefits(){
