@@ -72,6 +72,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 @media(max-width:800px){.trail-card{grid-template-columns:1fr}.trail-actions{justify-content:flex-start}.trail-actions .btn{flex:1;min-width:110px}.benefit-card{grid-template-columns:1fr}.benefit-actions{justify-content:flex-start}.benefit-actions .btn{flex:1;min-width:105px}.top-site-link{padding:9px 11px;font-size:12px}.top-site-link .site-label{display:none}}
 
 
+.fidelity-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:4px 0 16px}.fidelity-filters select{width:100%;padding:12px;background:#0d2b21;border:1px solid var(--line);border-radius:7px;color:var(--cream);font:inherit}.fidelity-filters .field{display:grid;gap:6px}.fidelity-filters label{font-size:10px;color:var(--gold);letter-spacing:1px;text-transform:uppercase}@media(max-width:800px){.fidelity-filters{grid-template-columns:1fr}}
 /* Organização da página Fidelidade */
 .fidelity-page{display:grid;gap:16px}
 .fidelity-page>.panel{margin:0}
@@ -264,6 +265,10 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
       <div class="fidelity-icon">03</div>
       <div><h2>Benefícios por indicações conquistados</h2><p>Os patamares atingidos são registrados uma única vez. O administrador pode marcar cada benefício como utilizado e consultar a data.</p></div>
     </div>
+    <div class="fidelity-filters">
+      <div class="field"><label for="referralParticipantFilter">Participante</label><select id="referralParticipantFilter" onchange="renderReferralRewards()"><option value="todos">Todos os participantes</option></select></div>
+      <div class="field"><label for="referralStatusFilter">Situação</label><select id="referralStatusFilter" onchange="renderReferralRewards()"><option value="todos">Todos os benefícios</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
+    </div>
     <div id="referralRewardsList" class="benefit-list"><div class="empty">Carregando benefícios conquistados por indicações...</div></div>
   </section>
 
@@ -271,6 +276,10 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
     <div class="fidelity-block-heading">
       <div class="fidelity-icon">02</div>
       <div><h2>Fidelidade por trilhas</h2><p>Conquistas vinculadas às regras de quantidade de trilhas registradas no Passaporte.</p></div>
+    </div>
+    <div class="fidelity-filters">
+      <div class="field"><label for="trailParticipantFilter">Participante</label><select id="trailParticipantFilter" onchange="renderTrailRewards()"><option value="todos">Todos os participantes</option></select></div>
+      <div class="field"><label for="trailStatusFilter">Situação</label><select id="trailStatusFilter" onchange="renderTrailRewards()"><option value="todos">Todos os benefícios</option><option value="disponivel">Disponíveis</option><option value="utilizado">Utilizados</option></select></div>
     </div>
     <div id="fidelityList" class="benefit-list"><div class="empty">Carregando benefícios por trilhas...</div></div>
   </section>
@@ -431,7 +440,7 @@ const partObservation=document.getElementById('partObservation');
 const participationSaveBtn=document.getElementById('participationSaveBtn');
 const participationList=document.getElementById('participationList');
 const fidelityList=document.getElementById('fidelityList');
-let participations=[],fidelityRows=[],editingParticipationId=null;
+let participations=[],fidelityRows=[],referralEarnedRows=[],editingParticipationId=null;
 const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],participantes:['Participantes','Cadastros e gestão dos participantes'],trilhas:['Trilhas','Destinos cadastrados na Reconec.tour'],participacoes:['Participações','Histórico de presença nas trilhas'],beneficios:['Benefícios','Regras e benefícios do Passaporte'],fidelidade:['Fidelidade','Ciclos e conquistas dos participantes']};
 
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.section)));
@@ -856,11 +865,8 @@ async function loadFidelity(){
   const people=new Map((pr.data||[]).map(x=>[String(x.id),x.nome]));
   const benefitsById=new Map((br.data||[]).map(x=>[String(x.id),x]));
   fidelityRows=(cr.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:benefitsById.get(String(x.beneficio_id))||null}));
-  if(!fidelityRows.length){
-    fidelityList.innerHTML='<div class="empty">Ainda não há benefícios conquistados por trilhas. As regras existentes continuam independentes das indicações.</div>';
-  } else {
-    fidelityList.innerHTML=fidelityRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Benefício removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div></div>').join('');
-  }
+  populateFidelityParticipantFilters(pr.data||[]);
+  renderTrailRewards();
 
   const activeReferralBenefits=rr.data||[];
   const totals=new Map();
@@ -888,11 +894,48 @@ async function loadFidelity(){
     console.error('Leitura de conquistas por indicações:',earned.error);return;
   }
   const referralById=new Map(activeReferralBenefits.map(x=>[String(x.id),x]));
-  const earnedRows=(earned.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:referralById.get(String(x.beneficio_indicacao_id))||null}));
-  if(referralRewardsList){
-    if(!earnedRows.length){referralRewardsList.innerHTML='<div class="empty">Nenhum benefício por indicações conquistado até o momento.</div>';}
-    else referralRewardsList.innerHTML=earnedRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Patamar desativado ou removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div><div class="benefit-actions"><button class="btn" onclick="toggleReferralReward(\''+x.id+'\','+(!x.utilizado)+')">'+(x.utilizado?'Desfazer utilização':'Marcar como utilizado')+'</button></div></div>').join('');
+  referralEarnedRows=(earned.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:referralById.get(String(x.beneficio_indicacao_id))||null}));
+  renderReferralRewards();
+}
+
+function populateFidelityParticipantFilters(rows){
+  for(const id of ['trailParticipantFilter','referralParticipantFilter']){
+    const el=document.getElementById(id);if(!el)continue;
+    const selected=el.value||'todos';
+    el.innerHTML='<option value="todos">Todos os participantes</option>'+rows.map(p=>'<option value="'+esc(String(p.id))+'">'+esc(p.nome||'Participante')+'</option>').join('');
+    if([...el.options].some(o=>o.value===selected))el.value=selected;
   }
+}
+
+function applyFidelityFilters(rows,participantId,status){
+  return rows.filter(x=>(participantId==='todos'||String(x.participante_id)===participantId)&&(status==='todos'||(status==='utilizado'?!!x.utilizado:!x.utilizado)));
+}
+
+function renderTrailRewards(){
+  const el=document.getElementById('fidelityList');if(!el)return;
+  if(!fidelityRows.length){el.innerHTML='<div class="empty">Ainda não há benefícios conquistados por trilhas. As regras existentes continuam independentes das indicações.</div>';return;}
+  const participant=document.getElementById('trailParticipantFilter')?.value||'todos';
+  const status=document.getElementById('trailStatusFilter')?.value||'todos';
+  const rows=applyFidelityFilters(fidelityRows,participant,status);
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum benefício por trilhas corresponde a esses filtros.</div>';return;}
+  el.innerHTML=rows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Benefício removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div><div class="benefit-actions"><button class="btn" onclick="toggleTrailReward(\''+x.id+'\','+(!x.utilizado)+')">'+(x.utilizado?'Desfazer utilização':'Marcar como utilizado')+'</button></div></div>').join('');
+}
+
+function renderReferralRewards(){
+  const el=document.getElementById('referralRewardsList');if(!el)return;
+  if(!referralEarnedRows.length){el.innerHTML='<div class="empty">Nenhum benefício por indicações conquistado até o momento.</div>';return;}
+  const participant=document.getElementById('referralParticipantFilter')?.value||'todos';
+  const status=document.getElementById('referralStatusFilter')?.value||'todos';
+  const rows=applyFidelityFilters(referralEarnedRows,participant,status);
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum benefício por indicações corresponde a esses filtros.</div>';return;}
+  el.innerHTML=rows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Patamar desativado ou removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div><div class="benefit-actions"><button class="btn" onclick="toggleReferralReward(\''+x.id+'\','+(!x.utilizado)+')">'+(x.utilizado?'Desfazer utilização':'Marcar como utilizado')+'</button></div></div>').join('');
+}
+
+async function toggleTrailReward(id,utilizado){
+  const payload={utilizado,utilizado_em:utilizado?new Date().toISOString():null};
+  const r=await db.from('beneficios_conquistados').update(payload).eq('id',id);
+  if(r.error){alert('Não foi possível atualizar o benefício por trilhas.\n\n'+r.error.message);return;}
+  await loadFidelity();
 }
 
 async function toggleReferralReward(id,utilizado){
