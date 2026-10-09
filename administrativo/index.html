@@ -153,7 +153,11 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="panel-head"><div><h2>Benefícios</h2><div class="sub" style="margin-top:5px">Configure as regras da fidelidade sem precisar alterar o código.</div></div><button class="btn primary" onclick="openBenefitModal()">+ Novo benefício</button></div>
 <div id="benefitList" class="benefit-list"></div>
 </div></section>
-<section id="fidelidade" class="section"><div class="panel"><h2>Fidelidade</h2><div class="empty">Módulo preparado para mostrar o ciclo 1 → 8, conquistas, utilização e histórico.</div></div></section>
+<section id="fidelidade" class="section">
+<div class="panel">
+<div class="panel-head"><div><h2>Fidelidade</h2><div class="sub" style="margin-top:5px">Conquistas registradas pelo banco a partir das participações. Consulte os benefícios disponíveis e os já utilizados.</div></div><button class="btn" onclick="loadFidelity()">Atualizar</button></div>
+<div id="fidelityList" class="benefit-list"><div class="empty">Carregue para consultar as conquistas reais.</div></div>
+</div></section>
 </main></div>
 
 <nav class="mobile-nav">
@@ -298,7 +302,8 @@ const partReferrals=document.getElementById('partReferrals');
 const partObservation=document.getElementById('partObservation');
 const participationSaveBtn=document.getElementById('participationSaveBtn');
 const participationList=document.getElementById('participationList');
-let participations=[],editingParticipationId=null;
+const fidelityList=document.getElementById('fidelityList');
+let participations=[],fidelityRows=[],editingParticipationId=null;
 const labels={dashboard:['Dashboard','Visão geral do Passaporte Reconec.tour'],participantes:['Participantes','Cadastros e gestão dos participantes'],trilhas:['Trilhas','Destinos cadastrados na Reconec.tour'],participacoes:['Participações','Histórico de presença nas trilhas'],beneficios:['Benefícios','Regras e benefícios do Passaporte'],fidelidade:['Fidelidade','Ciclos e conquistas dos participantes']};
 
 document.querySelectorAll('[data-section]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.section)));
@@ -306,7 +311,7 @@ function go(id){
 document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');
 document.querySelectorAll('[data-section]').forEach(x=>x.classList.toggle('active',x.dataset.section===id));
 title.textContent=labels[id][0];subtitle.textContent=labels[id][1];
-if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios')loadBenefits();
+if(id==='dashboard')loadDashboard();if(id==='participantes')loadParticipants();if(id==='trilhas')loadTrails();if(id==='participacoes')loadParticipations();if(id==='beneficios')loadBenefits();if(id==='fidelidade')loadFidelity();
 }
 async function entrar(){
 msg.textContent='Entrando...';
@@ -627,6 +632,35 @@ async function saveParticipation(){
   closeParticipationModal();await loadParticipations();await loadDashboard();
 }
 function editParticipation(id){openParticipationModal(id)}
+
+function fidelityDate(value){
+  if(!value)return 'Data não informada';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('pt-BR');
+}
+async function loadFidelity(){
+  if(!fidelityList)return;
+  fidelityList.innerHTML='<div class="empty">Carregando conquistas...</div>';
+  const [cr,pr,br]=await Promise.all([
+    db.from('beneficios_conquistados').select('id,participante_id,beneficio_id,conquistado_em,utilizado,utilizado_em').order('conquistado_em',{ascending:false}),
+    db.from('participantes').select('id,nome').order('nome',{ascending:true}),
+    db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true})
+  ]);
+  const errors=[cr.error&&('Conquistas: '+cr.error.message),pr.error&&('Participantes: '+pr.error.message),br.error&&('Benefícios: '+br.error.message)].filter(Boolean);
+  if(errors.length){
+    fidelityList.innerHTML='<div class="empty">Não foi possível carregar a fidelidade.<br><small>'+esc(errors.join(' | '))+'</small></div>';
+    console.error('Fidelidade:',errors);
+    return;
+  }
+  const people=new Map((pr.data||[]).map(x=>[String(x.id),x.nome]));
+  const benefitsById=new Map((br.data||[]).map(x=>[String(x.id),x]));
+  fidelityRows=(cr.data||[]).map(x=>({...x,participante_nome:people.get(String(x.participante_id))||'Participante não encontrado',beneficio:benefitsById.get(String(x.beneficio_id))||null}));
+  if(!fidelityRows.length){
+    fidelityList.innerHTML='<div class="empty">Ainda não há benefícios conquistados. Registre participações reais para que o gatilho de fidelidade do banco possa processar as regras.</div>';
+    return;
+  }
+  fidelityList.innerHTML=fidelityRows.map(x=>'<div class="benefit-card"><div class="benefit-main"><div class="benefit-title">'+esc(x.participante_nome)+'</div><div class="benefit-meta"><span class="tag">'+esc(x.beneficio?.nome||'Benefício removido')+'</span><span class="tag">Conquistado em '+fidelityDate(x.conquistado_em)+'</span><span class="tag '+(x.utilizado?'status-off':'status-on')+'">'+(x.utilizado?'Utilizado':'Disponível')+'</span></div>'+(x.beneficio?.descricao?'<div class="benefit-desc">'+esc(x.beneficio.descricao)+'</div>':'')+(x.utilizado_em?'<div class="benefit-desc">Utilizado em: '+fidelityDate(x.utilizado_em)+'</div>':'')+'</div></div>').join('');
+}
 
 async function loadBenefits(){
 const r=await db.from('beneficios').select('id,nome,descricao,quantidade_trilhas,tipo,ativo').order('quantidade_trilhas',{ascending:true});
