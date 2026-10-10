@@ -1799,6 +1799,21 @@ section.site-section:first-child {
   }
 }
 </style>
+
+<style id="admin-access-second-page-only">
+/* Acesso administrativo: mesmas cores e acabamento do botão Segurança */
+.quick-access-admin-wrap{max-width:440px;margin:1rem auto 0}
+.quick-access-admin-wrap .admin-access-button{
+  display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;
+  min-height:44px;padding:.65rem .8rem;border:1px solid rgba(201,166,83,.72);border-radius:6px;
+  color:var(--gold-light,#c9a653);background:transparent;text-decoration:none;
+  font-size:.72rem;letter-spacing:.05em;text-align:center;
+  transition:background .2s ease,color .2s ease,transform .2s ease;
+}
+.quick-access-admin-wrap .admin-access-button:hover{background:var(--gold-light,#c9a653);color:#193126;transform:translateY(-1px)}
+.quick-access-admin-wrap .admin-access-button::after{content:none}
+@media(max-width:520px){.quick-access-admin-wrap .admin-access-button{font-size:.66rem;min-height:42px}}
+</style>
 </head>
 <body>
 <header class="nav">
@@ -1868,6 +1883,9 @@ section.site-section:first-child {
 <a class="quick-access-btn passaporte-highlight" href="passaporte/">
        Passaporte Reconec.tour
       </a>
+</div>
+<div class="quick-access-admin-wrap">
+<a class="quick-access-btn admin-access-button" href="https://reconectour.github.io/administrativo/" aria-label="Acesso administrativo">Acesso administrativo</a>
 </div>
 <div class="quick-access-signature">
       Trilha • Natureza • Cultura • Saúde
@@ -2242,6 +2260,7 @@ section.site-section:first-child {
 <a class="social-whatsapp" href="https://chat.whatsapp.com/Ix1bAHvWvPJ4aKc93fE7pv?mode=gi_t" rel="noopener" target="_blank">
          Grupo no WhatsApp
         </a>
+
 </div>
 </div>
 <div>
