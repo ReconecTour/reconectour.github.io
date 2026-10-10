@@ -339,7 +339,7 @@ th{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercas
 <div class="field full"><label>Local</label><input id="tl" placeholder="Local / região"></div>
 <div class="field"><label>Dificuldade</label><select id="td"><option value="">Selecione</option><option value="Fácil">Fácil</option><option value="Moderada leve">Moderada leve</option><option value="Moderada superior">Moderada superior</option><option value="Difícil">Difícil</option></select></div>
 <div class="field"><label>Distância (km)</label><input id="tq" type="number" min="0" step="0.1" placeholder="Ex.: 4,5"></div>
-<div class="field"><label>Duração (minutos)</label><input id="tm" type="number" min="1" step="1" placeholder="Ex.: 150"></div>
+<div class="field"><label>Duração (horas)</label><input id="tm" type="number" min="0.25" step="0.25" placeholder="Ex.: 2,5"></div>
 <div class="field"><label>Status</label><select id="ta"><option value="true">Ativa</option><option value="false">Inativa</option></select></div>
 <div class="field full"><label>Descrição</label><textarea id="tx" placeholder="Descrição da trilha, percurso ou informações relevantes."></textarea></div>
 </div>
@@ -685,7 +685,7 @@ function openTrailModal(id=null){
   if(id){
     const t=trails.find(x=>x.id===id);
     if(!t)return;
-    tn.value=t.nome||'';tl.value=t.local||'';td.value=t.dificuldade||'';tq.value=t.distancia_km??'';tm.value=t.duracao_minutos??'';ta.value=String(t.ativa!==false);tx.value=t.descricao||'';
+    tn.value=t.nome||'';tl.value=t.local||'';td.value=t.dificuldade||'';tq.value=t.distancia_km??'';tm.value=t.duracao_minutos!=null?(Number(t.duracao_minutos)/60).toLocaleString('pt-BR',{maximumFractionDigits:2}):'';ta.value=String(t.ativa!==false);tx.value=t.descricao||'';
   }
   trailModal.classList.add('active');
 }
@@ -694,9 +694,10 @@ async function saveTrail(){
   const nome=tn.value.trim();
   if(!nome){alert('Informe o nome da trilha.');return;}
   const distancia=tq.value===''?null:Number(String(tq.value).replace(',','.'));
-  const duracao=tm.value===''?null:parseInt(tm.value,10);
+  const horas=tm.value===''?null:Number(String(tm.value).trim().replace(',','.'));
+  const duracao=horas===null?null:Math.round(horas*60);
   if(distancia!==null&&(!Number.isFinite(distancia)||distancia<0)){alert('Informe uma distância válida.');return;}
-  if(duracao!==null&&(!Number.isInteger(duracao)||duracao<1)){alert('Informe uma duração válida em minutos.');return;}
+  if(horas!==null&&(!Number.isFinite(horas)||horas<=0||duracao<1)){alert('Informe uma duração válida em horas. Ex.: 2,5.');return;}
   const payload={nome,local:tl.value.trim()||null,dificuldade:td.value||null,distancia_km:distancia,duracao_minutos:duracao,descricao:tx.value.trim()||null,ativa:ta.value==='true'};
   trailSaveBtn.disabled=true; trailSaveBtn.textContent='Salvando...';
   let r;
