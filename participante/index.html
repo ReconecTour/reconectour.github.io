@@ -61,10 +61,11 @@ footer{text-align:center;padding:18px;font-size:10px;color:#7f9288;letter-spacin
         <input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6">
       </div>
       <button id="sendButton" class="btn" type="submit">Entrar</button>
+      <button id="signupButton" class="btn secondary" type="button">Primeiro acesso: criar minha senha</button>
       <button id="resetButton" class="btn secondary" type="button">Esqueci minha senha</button>
     </form>
     <div id="loginMessage" class="message" role="status" aria-live="polite"></div>
-    <div class="note">Use o e-mail que consta no cadastro da Reconec.tour. No primeiro acesso, solicite ao administrativo a criação da sua conta e a definição da senha. Para recuperar uma senha esquecida, use “Esqueci minha senha”.</div>
+    <div class="note">Use o mesmo e-mail informado no cadastro da Reconec.tour. No primeiro acesso, toque em “Primeiro acesso: criar minha senha” e defina sua própria senha. O cadastro precisa existir e o e-mail deve corresponder exatamente ao registro. O administrativo pode iniciar uma redefinição, mas não consegue consultar senhas em texto aberto.</div>
   </section>
 
   <section id="profileCard" class="card profile hidden">
@@ -176,9 +177,49 @@ footer{text-align:center;padding:18px;font-size:10px;color:#7f9288;letter-spacin
       if (error) throw error;
       // O painel é carregado pelo evento SIGNED_IN do Supabase Auth.
     } catch (e) {
-      setMessage($('loginMessage'), 'Não foi possível entrar. Confira seu e-mail e senha. Se for o primeiro acesso, solicite ao administrativo a criação/vinculação da conta. Detalhe: ' + (e.message || 'erro desconhecido'), 'error');
+      setMessage($('loginMessage'), 'Não foi possível entrar. Confira seu e-mail e senha. Se for o primeiro acesso, use “Primeiro acesso: criar minha senha”. Detalhe: ' + (e.message || 'erro desconhecido'), 'error');
     } finally {
       $('sendButton').disabled = false;
+    }
+  });
+
+  $('signupButton').addEventListener('click', async () => {
+    const email = $('email').value.trim().toLowerCase();
+    const password = $('password').value;
+    if (!email) {
+      setMessage($('loginMessage'), 'Informe o e-mail que já consta no cadastro da Reconec.tour.', 'error');
+      $('email').focus();
+      return;
+    }
+    if (!password || password.length < 8) {
+      setMessage($('loginMessage'), 'Crie uma senha com pelo menos 8 caracteres no campo Senha.', 'error');
+      $('password').focus();
+      return;
+    }
+    $('signupButton').disabled = true;
+    setMessage($('loginMessage'), 'Criando seu acesso…');
+    try {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: 'https://reconectour.github.io/participante/' }
+      });
+      if (error) throw error;
+      if (data.session) {
+        const { data: linked, error: linkError } = await client.rpc('vincular_participante_por_email');
+        if (linkError) throw linkError;
+        if (linked !== true) {
+          await client.auth.signOut();
+          throw new Error('A conta foi criada, mas não foi possível vinculá-la a um cadastro único. Confira se o e-mail coincide com o cadastro e se o SQL de vínculo foi aplicado no Supabase.');
+        }
+        setMessage($('loginMessage'), 'Senha criada. Abrindo seu Passaporte…', 'success');
+      } else {
+        setMessage($('loginMessage'), 'Solicitação recebida. Se a confirmação de e-mail estiver ativada no Supabase, confirme a mensagem recebida e depois entre com o e-mail e a senha que você criou. Se o e-mail não estiver habilitado para esse cadastro, procure o suporte da Reconec.tour.', 'success');
+      }
+    } catch (e) {
+      setMessage($('loginMessage'), 'Não foi possível criar o acesso: ' + (e.message || 'erro desconhecido'), 'error');
+    } finally {
+      $('signupButton').disabled = false;
     }
   });
 
