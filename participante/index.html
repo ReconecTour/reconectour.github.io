@@ -41,6 +41,9 @@ footer{text-align:center;padding:18px;font-size:10px;color:#7f9288;letter-spacin
 .login-name{font-family:Georgia,serif;letter-spacing:2px;font-size:20px;color:var(--cream);margin-bottom:8px}
 @media(max-width:600px){body{padding:18px}.brand{font-size:17px}.subbrand{font-size:8px;letter-spacing:1px}main{margin:0}.card{padding:26px 20px}.logo{width:155px;height:155px}}
 @media print{html,body{background:#fff;color:#111}.no-print,header,footer{display:none!important}main{width:100%;margin:0}.card{background:#fff;color:#111;border:0;box-shadow:none}.profile h1,.person-name{color:#111}.eyebrow,.passport{color:#333}.instructions,.status{display:none}.qr-wrap{border:0}}
+
+.participant-dashboard{margin-top:24px;text-align:left}.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.dashboard-tile{border:1px solid var(--line,#e2e8e3);background:var(--soft,#f4f7f3);border-radius:14px;padding:16px;min-width:0}.tile-label{display:block;font-size:10px;font-weight:800;letter-spacing:.09em;color:var(--green,#244b38)}.dashboard-tile strong{display:block;font-size:28px;line-height:1.3;margin:8px 0;color:var(--ink,#1b2d22)}.dashboard-tile small{display:block;font-size:11px;line-height:1.4;color:var(--muted,#718078)}.history-panel{border-top:1px solid var(--line,#e2e8e3);padding:18px 0 4px;margin-top:10px}.history-panel h2{font-size:16px;margin:0 0 10px;color:var(--ink,#1b2d22)}.history-empty{font-size:13px;line-height:1.5;color:var(--muted,#718078)}.history-list{list-style:none;padding:0;margin:0}.history-list li{padding:12px 0;border-bottom:1px solid var(--line,#e2e8e3);font-size:13px}.history-list li:last-child{border-bottom:0}.history-list strong{display:block;color:var(--ink,#1b2d22);margin-bottom:4px}.history-list span{color:var(--muted,#718078)}@media(max-width:420px){.dashboard-grid{grid-template-columns:1fr}.dashboard-tile{padding:13px}}
+
 </style>
 </head>
 <body>
@@ -72,6 +75,14 @@ footer{text-align:center;padding:18px;font-size:10px;color:#7f9288;letter-spacin
     <div class="passport" id="passportCode"></div>
     <div class="qr-wrap" id="qrCode" aria-label="QR Code do participante"></div>
     <div class="instructions">O QR Code identifica seu Passaporte Reconec.tour. A presença só será registrada quando o guia selecionar a trilha, conferir seus dados e confirmar a participação.</div>
+    <section class="participant-dashboard" aria-label="Resumo do participante">
+      <div class="dashboard-grid">
+        <article class="dashboard-tile"><span class="tile-label">TRILHAS REGISTRADAS</span><strong id="trailsCount">—</strong><small>participações confirmadas</small></article>
+        <article class="dashboard-tile"><span class="tile-label">INDICAÇÕES</span><strong id="referralsCount">—</strong><small>indicações registradas pelos administradores</small></article>
+      </div>
+      <section class="history-panel"><h2>Meu histórico de trilhas</h2><p id="historyMessage" class="history-empty">Carregando suas participações…</p><ul id="historyList" class="history-list"></ul></section>
+      <section class="history-panel"><h2>Meus benefícios</h2><p id="benefitsMessage" class="history-empty">Seus benefícios dependem dos patamares de fidelidade configurados no Passaporte. Consulte esta área novamente após os registros serem atualizados.</p></section>
+    </section>
     <div id="profileMessage" class="message" role="status" aria-live="polite"></div>
     <div class="no-print">
       <button id="printButton" class="btn secondary" type="button">Imprimir meu QR Code</button>
@@ -145,6 +156,46 @@ footer{text-align:center;padding:18px;font-size:10px;color:#7f9288;letter-spacin
         width: 220, height: 220, colorDark: '#102f24', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
       });
+      // Carrega apenas participações associadas ao participante autenticado.
+      // As tabelas utilizadas são as mesmas do administrativo: participacoes e trilhas.
+      $('trailsCount').textContent = '…';
+      $('referralsCount').textContent = '…';
+      $('historyList').replaceChildren();
+      $('historyMessage').textContent = 'Carregando suas participações…';
+      const { data: participations, error: participationError } = await client.from('participacoes')
+        .select('id,trilha_id,data_participacao,indicacoes')
+        .eq('participante_id', participant.id)
+        .order('data_participacao', { ascending: false });
+      if (participationError) {
+        $('trailsCount').textContent = '—';
+        $('referralsCount').textContent = '—';
+        $('historyMessage').textContent = 'Não foi possível carregar o histórico neste momento.';
+      } else {
+        const rows = participations || [];
+        $('trailsCount').textContent = String(rows.length);
+        $('referralsCount').textContent = String(rows.reduce((sum, row) => sum + (Number(row.indicacoes) || 0), 0));
+        if (!rows.length) {
+          $('historyMessage').textContent = 'Ainda não há participações registradas para seu passaporte.';
+        } else {
+          $('historyMessage').textContent = '';
+          const trailIds = [...new Set(rows.map(row => row.trilha_id).filter(Boolean))];
+          let trailNames = {};
+          if (trailIds.length) {
+            const { data: trails } = await client.from('trilhas').select('id,nome,local').in('id', trailIds);
+            (trails || []).forEach(trail => { trailNames[String(trail.id)] = trail.nome || 'Trilha Reconec.tour'; });
+          }
+          rows.forEach(row => {
+            const li = document.createElement('li');
+            const title = document.createElement('strong');
+            title.textContent = trailNames[String(row.trilha_id)] || 'Trilha registrada';
+            const detail = document.createElement('span');
+            const date = row.data_participacao ? new Date(row.data_participacao + 'T12:00:00').toLocaleDateString('pt-BR') : 'Data não informada';
+            detail.textContent = date + ' · Indicações: ' + (Number(row.indicacoes) || 0);
+            li.append(title, detail);
+            $('historyList').appendChild(li);
+          });
+        }
+      }
       $('profileStatus').textContent = 'Acesso autenticado: ' + (session.user.email || 'e-mail confirmado');
       setMessage($('loginMessage'), '');
       showProfile();
